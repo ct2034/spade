@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-from logic import *
+from .logic import *
 import random
 
-import Behaviour
-import tbcbp
-import DF
-from FlexQueue import FlexQueue
-from Queue import Queue
+from . import Behaviour
+from . import tbcbp
+from . import DF
+from .FlexQueue import FlexQueue
+from queue import Queue
 
 
 class PreConditionFailed (Exception):

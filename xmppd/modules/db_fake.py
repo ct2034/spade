@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from xmpp import *
 
-import cPickle as marshal
-import cPickle as unmarshal
+import pickle as marshal
+import pickle as unmarshal
 import copy
 import threading
 
@@ -27,7 +27,7 @@ def build_database(server_instance):
     global db
     for a_registered_server in server_instance.servernames:
         server_instance.DEBUG('server', 'DB: Building database tree for %s' % a_registered_server, 'info')
-        if a_registered_server not in db.keys():
+        if a_registered_server not in list(db.keys()):
             db[a_registered_server] = DictWatch()
 
         db[a_registered_server]['__ir__'] = {}
@@ -184,12 +184,12 @@ class AUTH(PlugIn):
 
     def isuser(self, node, domain):
         try:
-            if node in db[str(domain)].keys():
+            if node in list(db[str(domain)].keys()):
                 return True
         except:
             pass
 
-        if str(domain) in self._owner.components.keys():
+        if str(domain) in list(self._owner.components.keys()):
             return True
         return False
 
@@ -226,7 +226,7 @@ class DB(PlugIn):
         if not node:
             node, domain = domain.split(".", 1)
         try:
-            l = copy.copy(db[domain][node]['storage'].values())
+            l = copy.copy(list(db[domain][node]['storage'].values()))
             db[domain][node]['storage'].clear()
             return l
         except KeyError:
@@ -250,7 +250,7 @@ class DB(PlugIn):
         if not node:
             node, domain = domain.split(".", 1)
         self.DEBUG("Saving roster info to database %s-->(%s) [%s]:\n" % (jid, node + '@' + domain, str(info)), 'info')
-        if jid in db[domain][node]['roster'].keys() and add_only_if_already is False:
+        if jid in list(db[domain][node]['roster'].keys()) and add_only_if_already is False:
             db[domain][node]['roster'][jid].update(info)
         else:
             db[domain][node]['roster'][jid] = info
@@ -261,7 +261,7 @@ class DB(PlugIn):
             node, domain = domain.split(".", 1)
         try:
             data = db[domain][node]['roster'][jid]
-            if 'subscription' not in data.keys():
+            if 'subscription' not in list(data.keys()):
                 data.update({'subscription': 'none'})
             return data
         except KeyError:
@@ -276,7 +276,7 @@ class DB(PlugIn):
             del(db[domain][node]['roster'][jid])
             self.save_database()
             return True
-        except KeyError, err:
+        except KeyError as err:
             self.DEBUG('DB ERR: A Client tried to remove a contact that wasn\'t even added! (%s::%s::%s)' % (domain, node, jid), 'warn')
             return False
 
@@ -288,7 +288,7 @@ class DB(PlugIn):
             del(db[domain][node]['roster'][jid][what])
             self.save_database()
             return True
-        except KeyError, err:
+        except KeyError as err:
             self.DEBUG('DB ERR: A Client tried to remove a contact attr that wasn\'t even added! (%s::%s::%s)' % (domain, node, jid), 'warn')
             return False
 
@@ -297,7 +297,7 @@ class DB(PlugIn):
             node, domain = domain.split(".", 1)
         temp = [x for x in groups]
         group_list = temp #[0] # will crash if empty!
-        self.DEBUG("Saving groupie jid to database %s-->(%s) [%s]:\n" % (jid, node + '@' + domain, unicode(groups).encode('utf-8')), 'info')
+        self.DEBUG("Saving groupie jid to database %s-->(%s) [%s]:\n" % (jid, node + '@' + domain, str(groups).encode('utf-8')), 'info')
         if db[domain][node]['groups'] == DictWatch():
             for gn in group_list:
                 db[domain][node]['groups'][gn] = [jid]
@@ -308,16 +308,16 @@ class DB(PlugIn):
                 db[domain][node]['groups'][gn] += [jid]
         '''
         for gn in group_list:
-            if gn not in db[domain][node]['groups'].keys():
+            if gn not in list(db[domain][node]['groups'].keys()):
                 db[domain][node]['groups'][gn] = [jid]
             else:
                 if jid not in db[domain][node]['groups'][gn]:
                     db[domain][node]['groups'][gn] += [jid]
-        for gn,gm in db[domain][node]['groups'].items():
+        for gn,gm in list(db[domain][node]['groups'].items()):
             if (gn not in group_list) and (jid in gm):
                 db[domain][node]['groups'][gn].remove(jid)
 
-        self.DEBUG("Saved groupie jid to database %s-->(%s) [%s]:\n" % (jid, db[domain][node], unicode(groups).encode('utf-8')), 'info')
+        self.DEBUG("Saved groupie jid to database %s-->(%s) [%s]:\n" % (jid, db[domain][node], str(groups).encode('utf-8')), 'info')
         self.save_database()
 
     def del_groupie(self, domain, node, jid):
@@ -325,10 +325,10 @@ class DB(PlugIn):
             node, domain = domain.split(".", 1)
         try:
             self.DEBUG("Deleting groupie from database %s--X(%s):\n" % (jid, node + '@' + domain), 'info')
-            for gn, gm in db[domain][node]['groups'].iteritems():
+            for gn, gm in db[domain][node]['groups'].items():
                 if jid in db[domain][node]['groups'][gn]:
                     db[domain][node]['groups'][gn].remove(jid)
-        except Exception, err:
+        except Exception as err:
             self.DEBUG('DB ERR: A groupie went mad! %s::%s::%s' % (domain, node, jid), 'warn')
         self.save_database()
 
@@ -353,7 +353,7 @@ class DB(PlugIn):
             return None
 
     def getNumRegistered(self, server):
-        return len(db[server].keys())
+        return len(list(db[server].keys()))
 
     def register_user(self, domain, node, password, name):
         try:

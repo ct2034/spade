@@ -63,9 +63,9 @@ from xmpp import *
 import time
 import sha
 import sys
-import xmlrpclib
+import xmlrpc.client
 
-globals()['socker_proxy'] = xmlrpclib.ServerProxy('http://%s' % globals()['cmd_options'].socker_info)
+globals()['socker_proxy'] = xmlrpc.client.ServerProxy('http://%s' % globals()['cmd_options'].socker_info)
 
 globals()['chain_result'] = globals()['socker_proxy'].getchain({'type_guid': '%s_p5222' % globals()['cmd_options'].tguid})
 
@@ -77,9 +77,9 @@ def readjuster(k, v):
     payload = {'act': 'get', 'type_guid': '%s_p5222' % globals()['cmd_options'].tguid, 'server_guid': v, 'get': ['jid']}
     jids = globals()['socker_proxy'].data(payload)
     if jids['code'] == 1:
-        print "[CHANNELGUIDE] %s" % jids['rs']
+        print("[CHANNELGUIDE] %s" % jids['rs'])
         globals()['clients'][k]['jids'] = jids['rs']
-        for x, y in jids['rs'].iteritems():
+        for x, y in jids['rs'].items():
             if x in ['__ir__@127.0.0.1']:
                 continue  # We don't want to broadcast to ourselves!
             if x not in globals()['channels']:
@@ -100,7 +100,7 @@ def routerHandler(session, stanza):
 
     barejid, resource = (to.getNode() + '@' + to.getDomain(), to.getResource())
 
-    print "processing request...", name, "::", to, resource  # ,frm
+    print("processing request...", name, "::", to, resource)  # ,frm
     if to == '__ir__@127.0.0.1/ROUTER':
         raise NodeProcessed
 
@@ -114,19 +114,19 @@ def routerHandler(session, stanza):
         raise NodeProcessed  # Awww, nowhere to go!
 
     if resource is None:  # woah, we have to send our stanza to everyone!
-        for loc in globals()['channels'][barejid].values():
+        for loc in list(globals()['channels'][barejid].values()):
             if barejid in globals()['clients'][loc]['jids']:
                 globals()['clients'][loc]['cl'].send(stanza)
-            print "[SENT:M] %s" % loc
+            print("[SENT:M] %s" % loc)
     else:
         globals()['clients'][globals()['channels'][barejid][resource]]['cl'].send(stanza)
-        print "[SENT:O] %s" % globals()['channels'][barejid][resource]
+        print("[SENT:O] %s" % globals()['channels'][barejid][resource])
 
     raise NodeProcessed
 
 
 if globals()['chain_result']['code'] == 1:
-    for k, v in globals()['chain_result']['chain'].iteritems():
+    for k, v in globals()['chain_result']['chain'].items():
         cl = Client(v['host'], v['port'], None)
 
         if not cl.connect(server=(v['host'], v['port'])):
@@ -155,11 +155,11 @@ while sd is False:
     try:
         if time.time() - last_time >= 5.0:
             globals()['channels'] = {}
-            for k, v in globals()['clients'].iteritems():
+            for k, v in globals()['clients'].items():
                 readjuster(k, v['sguid'])
             last_time = time.time()
         else:
-            for k, v in globals()['clients'].iteritems():
+            for k, v in globals()['clients'].items():
                 v['cl'].Process(0.01)
     except KeyboardInterrupt:
         sd = True

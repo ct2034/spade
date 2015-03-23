@@ -42,7 +42,7 @@ class SpadePlatform(PlatformAgent):
                         if not to.getAddresses()[0] in d:
                             d[to.getAddresses()[0]] = list()
                         d[to.getAddresses()[0]].append(to)
-                for k, v in d.items():
+                for k, v in list(d.items()):
                     newmsg = msg
                     newmsg.to = v
                     try:
@@ -53,7 +53,7 @@ class SpadePlatform(PlatformAgent):
 
                     # Check if one of our MTPs handles this protocol
                     #switch(protocol)
-                    if protocol in self.myAgent.mtps.keys():
+                    if protocol in list(self.myAgent.mtps.keys()):
                         self.myAgent.DEBUG("Message through protocol " + str(protocol))
                         payload = newmsg
 
@@ -109,18 +109,18 @@ class SpadePlatform(PlatformAgent):
         self.wui.setPort(8008)
         self.wui.start()
 
-        import mtps
+        from . import mtps
         # Load MTPs
-        for name, _mtp in self.config.acc.mtp.items():
+        for name, _mtp in list(self.config.acc.mtp.items()):
             try:
                 mod = "mtps."+name
                 mod = __import__(mod, globals(), locals(),[name])
                 self.mtps[_mtp['protocol']] = mod.INSTANCE(name, self.config, self)
-            except Exception, e:
+            except Exception as e:
                 self.DEBUG("EXCEPTION IMPORTING MTPS: " + str(e), 'err', 'acc')
 
     def takeDown(self):
-        for k, _mtp in self.mtps.items():
+        for k, _mtp in list(self.mtps.items()):
             try:
                 _mtp.stop()
                 del self.mtps[k]
@@ -180,12 +180,12 @@ class SpadePlatform(PlatformAgent):
         the_time = str(time.ctime())
         try:
             search = self.searchService(DfAgentDescription())
-        except Exception, e:
-            print "Exception: " + str(e)
+        except Exception as e:
+            print("Exception: " + str(e))
         servs = {}
         for dad in search:
             for service in dad.getServices():
-                if service.getType() not in servs.keys():
+                if service.getType() not in list(servs.keys()):
                     servs[service.getType()] = []
                 new_dad = dad
                 new_dad.services = [service]
@@ -204,11 +204,11 @@ class SpadePlatform(PlatformAgent):
         version = str(sys.version)
         the_time = str(time.ctime())
         roster = copy.copy(self.server.DB.db)
-        for server, v in roster.items():
+        for server, v in list(roster.items()):
             try:
                 del v["__ir__"]
             except: pass
-            for r in v.values():
+            for r in list(v.values()):
                 try:
                     del r["roster"]["__ir__"]
                 except: pass
@@ -236,5 +236,5 @@ class SpadePlatform(PlatformAgent):
             rep = None
             rep = self._receive(True, 20)
             if rep:
-                print "The members list arrived"
+                print("The members list arrived")
                 self.result = rep.getContent().split(",")

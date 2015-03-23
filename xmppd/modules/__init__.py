@@ -8,19 +8,19 @@ import os
 #    if m[:2]=='__' or m[-3:]<>'.py': continue
 #    exec "import "+m[:-3]
 
-import jep0078
-import roster
-import config
-import message
-import router
-import db_fake
-import muc
-import stream
-import dialback
-import oob
-import jep0077
-import pubsub
-import wq
+from . import jep0078
+from . import roster
+from . import config
+from . import message
+from . import router
+from . import db_fake
+from . import muc
+from . import stream
+from . import dialback
+from . import oob
+from . import jep0077
+from . import pubsub
+from . import wq
 
 addons = [
     # System stuff

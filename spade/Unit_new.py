@@ -3,8 +3,8 @@ import random
 import string
 
 from xmpp import *
-from Queue import *
-import Behaviour
+from queue import *
+from . import Behaviour
 
 
 class CreationError(Exception):
@@ -244,7 +244,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
             msg = self._receive(True, 10)
             if msg:
                 if msg.getAttr("type") == "error":
-                    print "Room creation is restricted"
+                    print("Room creation is restricted")
                     self.result = False
                     return
             else:
@@ -265,7 +265,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
 
         #setting room configuration
             if not msg or msg.getAttr("type") == "error":
-                print "No configuration is possible: " + msg.getError()
+                print("No configuration is possible: " + msg.getError())
                 #cambiar
                 iq = Iq(to=self.name + "@" + self.muc_name, typ='set', attrs={"id": self.ID})
                 query = Protocol('query', xmlns="http://jabber.org/protocol/muc#owner")
@@ -286,7 +286,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
             if resquery:
                 items = resquery.getTags("field")
             if resquery is None:
-                print "No configuration is possible"
+                print("No configuration is possible")
                 return False
             for item in items:
                 if item.getAttr("var"):
@@ -426,7 +426,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
 
     def invite(self, agentList):
         if self.state == "unavailable":
-            print "The " + self.UnavailableMsg + " " + self.name + " is unavailable"
+            print("The " + self.UnavailableMsg + " " + self.name + " is unavailable")
             return
         for agent in agentList:
             message = Node(tag="message", attrs={"to": self.name + "@" + self.muc_name})
@@ -445,7 +445,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
         """
         #comprobar que sea un objetivo valido
         if self.state == "unavailable":
-            print "The " + self.UnavailableMsg + " " + self.name + " is unavailable"
+            print("The " + self.UnavailableMsg + " " + self.name + " is unavailable")
             return
         if not self.checkGoal(goalList):
             raise NotValidGoal
@@ -479,7 +479,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
         Retruns a list of goals
         """
         if self.state == "unavailable":
-            print "The " + self.UnavailableMsg + " " + self.name + " is unavailable"
+            print("The " + self.UnavailableMsg + " " + self.name + " is unavailable")
             return
         ID = "".join([string.ascii_letters[int(random.randint(0, len(string.ascii_letters) - 1))] for a in range(5)])
         p = Iq(frm=self.name + "@" + self.muc_name, typ='result', attrs={"id": ID})
@@ -515,7 +515,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
                                 if item.getTags("value"):
                                     goal = item.getTags("value")[0].getData()
             if goal is None:
-                print "Not goal"
+                print("Not goal")
             self.result = goal
 
     def getInfo(self):
@@ -571,7 +571,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
         Returns a List with Agents' names belonging to the organization
         """
         if self.state == "unavailable":
-            print "The " + self.UnavailableMsg + " " + self.name + " is unavailable"
+            print("The " + self.UnavailableMsg + " " + self.name + " is unavailable")
             return
         ID = "".join([string.ascii_letters[int(random.randint(0, len(string.ascii_letters) - 1))] for a in range(5)])
         p = Iq(frm=self.name + "@" + self.muc_name, attrs={"id": ID})
@@ -604,7 +604,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
             if msg:
                 error = msg.getError()
                 if error is not None:
-                    print error
+                    print(error)
                     return
                 query = msg.getTag("query")
                 if query:
@@ -619,7 +619,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
         Returns Maximum agents allowed to enter inside the Organization
         """
         if self.state == "unavailable":
-            print "The " + self.UnavailableMsg + " " + self.name + " is unavailable"
+            print("The " + self.UnavailableMsg + " " + self.name + " is unavailable")
             return
         ID = "".join([string.ascii_letters[int(random.randint(0, len(string.ascii_letters) - 1))] for a in range(5)])
         p = Iq(frm=self.name + "@" + self.muc_name, attrs={"id": ID})
@@ -654,7 +654,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
                         if item.getAttr("var") == "muc#roominfo_maxusers":
                             maxAgents = item.getTags("value")[0].getData()
             if maxAgents is None:
-                print "Maximum agents has not been established"
+                print("Maximum agents has not been established")
             self.result = maxAgents
 
     def getMinAgents(self):
@@ -662,7 +662,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
         Returns Minimum agents needed to allow conversations inside
         """
         if self.state == "unavailable":
-            print "The " + self.UnavailableMsg + " " + self.name + " is unavailable"
+            print("The " + self.UnavailableMsg + " " + self.name + " is unavailable")
             return
         ID = "".join([string.ascii_letters[int(random.randint(0, len(string.ascii_letters) - 1))] for a in range(5)])
         p = Iq(frm=self.name + "@" + self.muc_name, attrs={"id": ID})
@@ -696,7 +696,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
                         if item.getAttr("var") == "muc#roominfo_minusers":
                             minAgents = item.getTags("value")[0].getData()
                 if minAgents is None:
-                    print "Minimum agents has not been established"
+                    print("Minimum agents has not been established")
             self.result = minAgents
 
     def setMaxAgents(self, maxUsers):
@@ -704,7 +704,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
          Updates Maximum agents allowed to enter inside the Organization
         """
         if self.state == "unavailable":
-            print "The " + self.UnavailableMsg + " " + self.name + " is unavailable"
+            print("The " + self.UnavailableMsg + " " + self.name + " is unavailable")
             return
         ID = "".join([string.ascii_letters[int(random.randint(0, len(string.ascii_letters) - 1))] for a in range(5)])
         p = Iq(frm=self.name + "@" + self.muc_name, attrs={"id": ID})
@@ -728,18 +728,18 @@ class Unit_new(Behaviour.OneShotBehaviour):
             self.myAgent.jabber.send(iq)
             msg = self._receive(True, 10)
             if msg.getAttr("type") != "result":
-                print "Forbidden. Not owner"  # completar un poco el error
+                print("Forbidden. Not owner")  # completar un poco el error
                 return
                 #setting room configuration
             iq = Iq(to=self.name + "@" + self.muc_name, typ='set', attrs={"id": self.ID})
             query = Protocol('query', xmlns="http://jabber.org/protocol/muc#owner")
             x = Node(tag="x", attrs={"xmlns": "jabber:x:data", " type": "submit"})
-            print msg.getQueryChildren()
+            print(msg.getQueryChildren())
             resquery = msg.getQueryChildren()[0]  # nos quedamos con el hijo de query
             if resquery:
                 items = resquery.getTags("field")
             if resquery is None:
-                print "No configuration is possible"
+                print("No configuration is possible")
                 self.result = False
             for item in items:
                 value = None
@@ -762,7 +762,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
         Updates Minimum agents needed to allow conversations inside
         """
         if self.state == "unavailable":
-            print "The " + self.UnavailableMsg + " " + self.name + " is unavailable"
+            print("The " + self.UnavailableMsg + " " + self.name + " is unavailable")
             return
         ID = "".join([string.ascii_letters[int(random.randint(0, len(string.ascii_letters) - 1))] for a in range(5)])
         p = Iq(frm=self.name + "@" + self.muc_name, attrs={"id": ID})
@@ -787,19 +787,19 @@ class Unit_new(Behaviour.OneShotBehaviour):
             self.myAgent.jabber.send(iq)
             msg = self._receive(True, 10)
             if msg.getAttr("type") != "result":
-                print "Forbidden. Not owner"  # completar un poco el error
+                print("Forbidden. Not owner")  # completar un poco el error
                 return
             self.myAgent.register_mailbox(typ="iq", id=self.ID)
                 #setting room configuration
             iq = Iq(to=self.name + "@" + self.muc_name, typ='set', attrs={"id": self.ID})
             query = Protocol('query', xmlns="http://jabber.org/protocol/muc#owner")
             x = Node(tag="x", attrs={"xmlns": "jabber:x:data", " type": "submit"})
-            print msg.getQueryChildren()
+            print(msg.getQueryChildren())
             resquery = msg.getQueryChildren()[0]  # nos quedamos con el hijo de query
             if resquery:
                 items = resquery.getTags("field")
             if resquery is None:
-                print "No configuration is possible"
+                print("No configuration is possible")
                 self.result = False
             for item in items:
                 value = None
@@ -822,7 +822,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
         Returns current number od agents that are inside
         """
         if self.state == "unavailable":
-            print "The " + self.UnavailableMsg + " " + self.name + " is unavailable"
+            print("The " + self.UnavailableMsg + " " + self.name + " is unavailable")
             return
         ID = "".join([string.ascii_letters[int(random.randint(0, len(string.ascii_letters) - 1))] for a in range(5)])
         p = Iq(frm=self.name + "@" + self.muc_name, attrs={"id": ID})
@@ -857,12 +857,12 @@ class Unit_new(Behaviour.OneShotBehaviour):
                         if item.getAttr("var") == "muc#roominfo_occupants":
                             agents = item.getTags("value")[0].getData()
             if agents is None:
-                print "Error"
+                print("Error")
             self.result = agents
 
     def getOwnerList(self):
         if self.state == "unavailable":
-            print "The " + self.UnavailableMsg + " " + self.name + " is unavailable"
+            print("The " + self.UnavailableMsg + " " + self.name + " is unavailable")
             return
         ID = "".join([string.ascii_letters[int(random.randint(0, len(string.ascii_letters) - 1))] for a in range(5)])
         p = Iq(frm=self.name + "@" + self.muc_name, attrs={"id": ID})
@@ -890,7 +890,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
             msg = self._receive(True, 10)
             if msg:
                 if msg.getAttr("type") != "result":
-                    print msg.getError()  # completar un poco el error
+                    print(msg.getError())  # completar un poco el error
                     return
                 query = msg.getQueryChildren()
                 if query:
@@ -904,7 +904,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
 
     def addAdmin(self, newAdminJID):
         if self.state == "unavailable":
-            print "The " + self.UnavailableMsg + " " + self.name + " is unavailable"
+            print("The " + self.UnavailableMsg + " " + self.name + " is unavailable")
             return
         ID = "".join([string.ascii_letters[int(random.randint(0, len(string.ascii_letters) - 1))] for a in range(5)])
         p = Iq(frm=self.name + "@" + self.muc_name, attrs={"id": ID})
@@ -932,11 +932,11 @@ class Unit_new(Behaviour.OneShotBehaviour):
             msg = self._receive(True, 10)
             if msg:
                 if msg.getAttr("type") == "error":
-                    print msg.getError()  # completar un poco el error
+                    print(msg.getError())  # completar un poco el error
 
     def removeAdmin(self, AdminJID):
         if self.state == "unavailable":
-            print "The " + self.UnavailableMsg + " " + self.name + " is unavailable"
+            print("The " + self.UnavailableMsg + " " + self.name + " is unavailable")
             return
         ID = "".join([string.ascii_letters[int(random.randint(0, len(string.ascii_letters) - 1))] for a in range(5)])
         p = Iq(frm=self.name + "@" + self.muc_name, attrs={"id": ID})
@@ -966,7 +966,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
             exists = False
             if msg:
                 if msg.getAttr("type") != "result":
-                    print msg.getError()  # completar un poco el error
+                    print(msg.getError())  # completar un poco el error
                     return
                 query = msg.getQueryChildren()
                 if query:
@@ -982,17 +982,17 @@ class Unit_new(Behaviour.OneShotBehaviour):
                     msgAns = self._receive(True, 10)
                     if msgAns:
                         if msgAns.getAttr("type") != "result":
-                            print msgAns.getError()  # completar un poco el error
+                            print(msgAns.getError())  # completar un poco el error
                         else:
                             exists = True
                 if not exists:
-                    print "The JID " + self.newAdminJID + " doesn't belong to a admin"
+                    print("The JID " + self.newAdminJID + " doesn't belong to a admin")
                 return
-            print "Error"  # completar un poco el error
+            print("Error")  # completar un poco el error
 
     def getAdminList(self):
         if self.state == "unavailable":
-            print "The " + self.UnavailableMsg + " " + self.name + " is unavailable"
+            print("The " + self.UnavailableMsg + " " + self.name + " is unavailable")
             return
         ID = "".join([string.ascii_letters[int(random.randint(0, len(string.ascii_letters) - 1))] for a in range(5)])
         p = Iq(frm=self.name + "@" + self.muc_name, attrs={"id": ID})
@@ -1020,7 +1020,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
             msg = self._receive(True, 10)
             if msg:
                 if msg.getAttr("type") != "result":
-                    print msg.getError()  # completar un poco el error
+                    print(msg.getError())  # completar un poco el error
                     return
                 query = msg.getQueryChildren()
                 if query:
@@ -1034,7 +1034,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
 
     def addModerator(self, newModeratorJID):
         if self.state == "unavailable":
-            print "The " + self.UnavailableMsg + " " + self.name + " is unavailable"
+            print("The " + self.UnavailableMsg + " " + self.name + " is unavailable")
             return
         ID = "".join([string.ascii_letters[int(random.randint(0, len(string.ascii_letters) - 1))] for a in range(5)])
         p = Iq(frm=self.name + "@" + self.muc_name, attrs={"id": ID})
@@ -1062,11 +1062,11 @@ class Unit_new(Behaviour.OneShotBehaviour):
             msg = self._receive(True, 10)
             if msg:
                 if msg.getAttr("type") != "result":
-                    print msg.getError()  # completar un poco el error
+                    print(msg.getError())  # completar un poco el error
 
     def removeModerator(self, moderatorJID):
         if self.state == "unavailable":
-            print "The " + self.UnavailableMsg + " " + self.name + " is unavailable"
+            print("The " + self.UnavailableMsg + " " + self.name + " is unavailable")
             return
         ID = "".join([string.ascii_letters[int(random.randint(0, len(string.ascii_letters) - 1))] for a in range(5)])
         p = Iq(frm=self.name + "@" + self.muc_name, attrs={"id": ID})
@@ -1095,7 +1095,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
             exists = False
             if msg:
                 if msg.getAttr("type") != "result":
-                    print msg.getError()  # completar un poco el error
+                    print(msg.getError())  # completar un poco el error
                     return
                 query = msg.getQueryChildren()
                 if query:
@@ -1113,14 +1113,14 @@ class Unit_new(Behaviour.OneShotBehaviour):
                     msgAns = self._receive(True, 10)
                     if msgAns:
                         if msgAns.getAttr("type") != "result":
-                            print msgAns.getError()  # completar un poco el error
+                            print(msgAns.getError())  # completar un poco el error
                 if not exists:
-                    print "The JID " + self.moderatorJID + " doesn't belong to a owner"
-            print "Error"  # completar un poco el error
+                    print("The JID " + self.moderatorJID + " doesn't belong to a owner")
+            print("Error")  # completar un poco el error
 
     def getModeratorList(self):
         if self.state == "unavailable":
-            print "The " + self.UnavailableMsg + " " + self.name + " is unavailable"
+            print("The " + self.UnavailableMsg + " " + self.name + " is unavailable")
             return
         ID = "".join([string.ascii_letters[int(random.randint(0, len(string.ascii_letters) - 1))] for a in range(5)])
         p = Iq(frm=self.name + "@" + self.muc_name, attrs={"id": ID})
@@ -1148,7 +1148,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
             msg = self._receive(True, 10)
             if msg:
                 if msg.getAttr("type") != "result":
-                    print msg.getError()  # completar un poco el error
+                    print(msg.getError())  # completar un poco el error
                     return
                 query = msg.getQueryChildren()
                 if query:
@@ -1159,14 +1159,14 @@ class Unit_new(Behaviour.OneShotBehaviour):
                             owners.append(str(item.getAttr("jid")))
                     self.result = owners
                     return
-            print "Error"  # completar un poco el error
+            print("Error")  # completar un poco el error
 
     def leave(self):
         """
          Agent leaves and it is removed from the member list
           """
         if self.state == "unavailable":
-            print "The " + self.UnavailableMsg + " " + self.name + " is unavailable"
+            print("The " + self.UnavailableMsg + " " + self.name + " is unavailable")
             return
         if self.owner is False:
             p = Presence(to=self.name + "@" + self.muc_name + "/" + self.nick, typ="unavailable")
@@ -1182,7 +1182,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
        Unit owner destroys the unit
         """
         if self.state == "unavailable":
-            print "The " + self.UnavailableMsg + " " + self.name + " is unavailable"
+            print("The " + self.UnavailableMsg + " " + self.name + " is unavailable")
             return
         ID = "".join([string.ascii_letters[int(random.randint(0, len(string.ascii_letters) - 1))] for a in range(5)])
         p = Iq(frm=self.name + "@" + self.muc_name, attrs={"id": ID})
@@ -1218,7 +1218,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
             if msg:
                 if msg.getAttr("type") != "result":
             #print "Error: This agent is not a owner of the organization"
-                    print msg.getError()
+                    print(msg.getError())
                     return
                 else:
                     #Desregistrando del OMS
@@ -1231,7 +1231,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
                     #print res
                     self.result = True
                     return
-            print "Error: el mensaje no se ha recibido"
+            print("Error: el mensaje no se ha recibido")
 
     class PresenceBehaviour(Behaviour.Behaviour):
         def __init__(self, muc_name, roomname, nick, unit):
@@ -1251,16 +1251,16 @@ class Unit_new(Behaviour.OneShotBehaviour):
                             self.unit.state = "unavailable"
                             destroy = x.getTag("destroy")
                             if destroy:
-                                print "The room has been destroyed"
+                                print("The room has been destroyed")
                                 return
                         if msg.getStatusCode() == "301":
-                            print "You have been baned"
+                            print("You have been baned")
                             return
                         else:
                             if msg.getStatusCode() == "307":
-                                print "You have been kicked"
+                                print("You have been kicked")
                                 return
-                        print "You have left the room"
+                        print("You have left the room")
                     else:
                         if msg.getFrom() in self.unit.members:
                             self.unit.members.remove(msg.getFrom())
@@ -1329,7 +1329,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
                         if msg:
                             error = msg.getError()
                             if error is not None:
-                                print error
+                                print(error)
                                 return
                             q = msg.getTag("query")
                             if q:
@@ -1353,7 +1353,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
                     if msg:
                         error = msg.getError()
                         if error is not None:
-                            print error
+                            print(error)
                             return
                         q = msg.getTag("query")
                         if q:
@@ -1398,7 +1398,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
             msg = self._receive(True, 10)
             if msg:
                 if msg.getAttr("type") != "result":
-                    print msg.getError()
+                    print(msg.getError())
 
     def addBanAgent(self, agentJID):
         if self.state == "unavailable":
@@ -1431,7 +1431,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
             msg = self._receive(True, 10)
             if msg:
                 if msg.getAttr("type") != "result":
-                    print "Error"  # completar un poco el error
+                    print("Error")  # completar un poco el error
 
     def removeBanAgent(self, agentJID):
         if self.state == "unavailable":
@@ -1465,7 +1465,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
             exists = False
             if msg:
                 if msg.getAttr("type") != "result":
-                    print msg.getError()  # completar un poco el error
+                    print(msg.getError())  # completar un poco el error
                     return
                 query = msg.getQueryChildren()
                 if query:
@@ -1481,11 +1481,11 @@ class Unit_new(Behaviour.OneShotBehaviour):
                     msgAns = self._receive(True, 10)
                     if msgAns:
                         if msgAns.getAttr("type") != "result":
-                            print msgAns.getError()  # completar un poco el error
+                            print(msgAns.getError())  # completar un poco el error
                     if not exists:
-                        print "The JID " + self.agentJID + " doesn't belong to a banned agent"
+                        print("The JID " + self.agentJID + " doesn't belong to a banned agent")
                 return
-            print "Error"  # completar un poco el error
+            print("Error")  # completar un poco el error
 
     def getBanAgentList(self):
         if self.state == "unavailable":
@@ -1518,7 +1518,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
             msg = self._receive(True, 10)
             if msg:
                 if msg.getAttr("type") != "result":
-                    print msg.getError()  # completar un poco el error
+                    print(msg.getError())  # completar un poco el error
                     return
                 query = msg.getQueryChildren()
                 if query:
@@ -1557,7 +1557,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
             msg = self._receive(True, 10)
             if msg:
                 if msg.getAttr("type") != "result":
-                    print msg.getError()  # completar un poco el error
+                    print(msg.getError())  # completar un poco el error
 
     def revokeVoice(self, nickname):
         if self.state == "unavailable":
@@ -1589,7 +1589,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
             msg = self._receive(True, 10)
             if msg:
                 if msg.getAttr("type") != "result":
-                    print msg.getError()  # completar un poco el error
+                    print(msg.getError())  # completar un poco el error
 
     def sendMessage(self, message):
         if self.state == "unavailable":
@@ -1616,7 +1616,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
             self.myAgent.jabber.send(m)
             msg = self._receive(True, 10)
             if msg:
-                print "This message can't be sent"
+                print("This message can't be sent")
             #falta comprobar la respuesta del servidor forbidden o not-acceptable(este no deberia producirse)
 
     def sendPrivateMessage(self, recName, message):
@@ -1643,7 +1643,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
             self.myAgent.jabber.send(m)
             msg = self._receive(True, 10)
             if msg:
-                print "This message can't be sent"
+                print("This message can't be sent")
             #falta comprobar si la respuesta del servidorforbidden o not-acceptable(este no deberia producirse)
 
     def setRegistrationForm(self, dataForm):
@@ -1666,7 +1666,7 @@ class Unit_new(Behaviour.OneShotBehaviour):
                     if self.orgOwner is None:
                         self.orgOwner = self.getOwnerList()[0]
                     unit.orgOwner = self.orgOwner
-                    print self.orgOwner
+                    print(self.orgOwner)
                     unit.orgOwner = self.orgOwner
                     self.myAgent.addBehaviour(unit)
                 else:

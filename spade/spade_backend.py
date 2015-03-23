@@ -22,7 +22,7 @@ class SpadeBackend:
         server = config["platform"]['hostname']
         port = int(config[section]['port'])
         jid = section + "." + server
-        if not "adminpasswd" in config.keys():
+        if not "adminpasswd" in list(config.keys()):
             config["adminpasswd"] = None
         if section == "acc":
             agent = agentClass(jid, passwd, server, port, config=config)

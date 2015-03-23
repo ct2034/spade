@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import types
-import AID
+from . import AID
 try:
     import json
 except ImportError:

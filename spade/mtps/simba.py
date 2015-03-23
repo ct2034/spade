@@ -6,13 +6,13 @@ from spade import ACLParser
 from spade import Envelope
 
 import socket
-import SocketServer
+import socketserver
 import xmpp
 
-import thread
+import _thread
 
 
-class SimbaRequestHandler(SocketServer.DatagramRequestHandler):
+class SimbaRequestHandler(socketserver.DatagramRequestHandler):
     '''
     Request handler for SIMBA messages
     '''
@@ -28,8 +28,8 @@ class SimbaRequestHandler(SocketServer.DatagramRequestHandler):
 class simba(MTP.MTP):
 
     def receiveThread(self):
-        SocketServer.ThreadingUDPServer.allow_reuse_address = True
-        self.SS = SocketServer.ThreadingUDPServer(("", self.port), SimbaRequestHandler)
+        socketserver.ThreadingUDPServer.allow_reuse_address = True
+        self.SS = socketserver.ThreadingUDPServer(("", self.port), SimbaRequestHandler)
         self.SS.dispatch = self.dispatch
         self.SS.parser = ACLParser.ACLParser()
         #print "SIMBA SS listening on port " + str(self.port)
@@ -38,9 +38,9 @@ class simba(MTP.MTP):
     def stop(self):
         try:
             del self.SS
-        except Exception, e:
+        except Exception as e:
             pass
-            print "EXCEPTION IN SIMBA", str(e)
+            print("EXCEPTION IN SIMBA", str(e))
 
     def setup(self):
         '''
@@ -51,7 +51,7 @@ class simba(MTP.MTP):
         self.port = 2001
 
         # Launch receive thread
-        tid = thread.start_new_thread(self.receiveThread, ())
+        tid = _thread.start_new_thread(self.receiveThread, ())
 
     def send(self, envelope, payload, to=None):
         '''
@@ -62,7 +62,7 @@ class simba(MTP.MTP):
             p = ACLParser.ACLxmlParser()
             aclmsg = p.parse(payload)
         except:
-            print ">>>SIMBA: COULD NOT BUILD ACL"
+            print(">>>SIMBA: COULD NOT BUILD ACL")
             pass
 
         if to is None:
@@ -89,7 +89,7 @@ class simba(MTP.MTP):
                         s.send(str(aclmsg))  # ACL with parenthesis, oh no!
                         s.close()
                     except:
-                        print "Could not send SIMBA message"
+                        print("Could not send SIMBA message")
 
 # Required
 PROTOCOL = "simba"

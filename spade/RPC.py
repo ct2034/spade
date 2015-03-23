@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-import Behaviour
-import xmlrpclib
+from . import Behaviour
+import xmlrpc.client
 import xmpp
 from xmpp.protocol import NS_RPC
 from xmpp import Iq
@@ -33,13 +33,13 @@ class RPCServerBehaviour(Behaviour.EventBehaviour):
                 self.myAgent.DEBUG("RPC request received: " + str(self.msg), 'info', "rpc")
 
                 mc = self.msg.getTag('query')
-                params, name = xmlrpclib.loads("<?xml version='1.0'?>%s" % str(mc))
+                params, name = xmlrpc.client.loads("<?xml version='1.0'?>%s" % str(mc))
                 name = name.lower()
-                self.myAgent.DEBUG("Params processed: name=" + name + " params=" + str(params) + " in " + str(self.myAgent.RPC.keys()), "info", "rpc")
+                self.myAgent.DEBUG("Params processed: name=" + name + " params=" + str(params) + " in " + str(list(self.myAgent.RPC.keys())), "info", "rpc")
 
                 if name not in self.myAgent.RPC:
                     self.myAgent.DEBUG("RPC: 404 method not found", 'error', "rpc")
-                    xmlrpc_res = xmlrpclib.dumps(xmlrpclib.Fault(404, "method not found"))
+                    xmlrpc_res = xmlrpc.client.dumps(xmlrpc.client.Fault(404, "method not found"))
                     reply = self.msg.buildReply("error")
                     reply.setQueryPayload([xmpp.simplexml.XML2Node(xmlrpc_res)])
                     reply.setType("result")
@@ -52,12 +52,12 @@ class RPCServerBehaviour(Behaviour.EventBehaviour):
                 self.myAgent.DEBUG("service and method: " + str(service) + " --> " + str(methodCall), "info", "rpc")
 
                 self.myAgent.DEBUG("Comparing service.getInputs(): " + str(service.getInputs()) + " with params--> " + str(params), "info", "rpc")
-                ps = params[0].keys()
+                ps = list(params[0].keys())
                 for p in eval(str(service.getInputs())):  # service.getP():
                     self.myAgent.DEBUG("Comparing input " + str(p) + " with " + str(ps))
                     if str(p) not in ps:
                         self.myAgent.DEBUG("RPC: 500 missing input: " + str(p) + " is not in " + str(params), 'error', "rpc")
-                        xmlrpc_res = xmlrpclib.dumps(xmlrpclib.Fault(500, "missing input"))
+                        xmlrpc_res = xmlrpc.client.dumps(xmlrpc.client.Fault(500, "missing input"))
                         reply = self.msg.buildReply("error")
                         reply.setQueryPayload([xmpp.simplexml.XML2Node(xmlrpc_res)])
                         reply.setType("result")
@@ -71,13 +71,13 @@ class RPCServerBehaviour(Behaviour.EventBehaviour):
                         result = methodCall()
                     else:
                         args = ""
-                        for k, v in params[0].items():
+                        for k, v in list(params[0].items()):
                             args += str(k) + "=" + str(v) + ","
                         args = args[:-1]
                         result = eval("methodCall(" + args + ")")
-                except Exception, e:
+                except Exception as e:
                     self.myAgent.DEBUG("RPC: 500 method error: " + str(e), 'error', "rpc")
-                    xmlrpc_res = xmlrpclib.dumps(xmlrpclib.Fault(500, "method error: " + str(e)))
+                    xmlrpc_res = xmlrpc.client.dumps(xmlrpc.client.Fault(500, "method error: " + str(e)))
                     reply = self.msg.buildReply("error")
                     reply.setQueryPayload([xmpp.simplexml.XML2Node(xmlrpc_res)])
                     reply.setType("result")
@@ -89,9 +89,9 @@ class RPCServerBehaviour(Behaviour.EventBehaviour):
                 try:
                     fail = False
                     outputs = {}
-                    if isinstance(result, types.DictType):
+                    if isinstance(result, dict):
                         for q in eval(str(service.getOutputs())):  # service.getQ():
-                            if q not in result.keys():
+                            if q not in list(result.keys()):
                                 fail = True
                                 break
                             else:
@@ -104,7 +104,7 @@ class RPCServerBehaviour(Behaviour.EventBehaviour):
                     fail = True
                 if fail:
                     self.myAgent.DEBUG("RPC: 500 missing output: " + str(service.getQ()), 'error', "rpc")
-                    xmlrpc_res = xmlrpclib.dumps(xmlrpclib.Fault(500, "missing output"))
+                    xmlrpc_res = xmlrpc.client.dumps(xmlrpc.client.Fault(500, "missing output"))
                     reply = self.msg.buildReply("error")
                     reply.setQueryPayload([xmpp.simplexml.XML2Node(xmlrpc_res)])
                     reply.setType("result")
@@ -113,7 +113,7 @@ class RPCServerBehaviour(Behaviour.EventBehaviour):
                     return
 
                 #Everything was ok. Return results
-                xmlrpc_res = xmlrpclib.dumps(params, methodresponse=True, allow_none=True)
+                xmlrpc_res = xmlrpc.client.dumps(params, methodresponse=True, allow_none=True)
                 reply = self.msg.buildReply("result")
                 reply.setQueryPayload([xmpp.simplexml.XML2Node(xmlrpc_res)])
                 self.myAgent.send(reply)
@@ -164,7 +164,7 @@ class RPCClientBehaviour(Behaviour.OneShotBehaviour):
         #            self.myAgent.DEBUG("Precondition "+ str(p) + " is not satisfied. Can't call method "+self.service.getName(),'error',"rpc")
         #            return
 
-        payload = xmlrpclib.dumps((params,), methodname=self.service.getName(), allow_none=True)
+        payload = xmlrpc.client.dumps((params,), methodname=self.service.getName(), allow_none=True)
         self.myAgent.DEBUG("Marshalled " + payload, "info", "rpc")
         payload_node = xmpp.simplexml.XML2Node(payload)
         to = xmpp.protocol.JID(self.service.getOwner().getName())
@@ -180,17 +180,17 @@ class RPCClientBehaviour(Behaviour.OneShotBehaviour):
             self.myAgent.DEBUG("Response received for method " + self.service.getName() + ":" + str(self.msg), 'ok', "rpc")
             if self.msg.getType() == "result":
                 try:
-                    params, method = xmlrpclib.loads("<?xml version='1.0'?>%s" % self.msg)
+                    params, method = xmlrpc.client.loads("<?xml version='1.0'?>%s" % self.msg)
                     self.DEBUG("Returned params " + str(params), 'ok', "rpc")
                     self.result = params[0]
                     #if agent is a BDIAgent add result params as postconditions
-                    for k, v in self.result.items():  # [0]:
+                    for k, v in list(self.result.items()):  # [0]:
                             self.myAgent.kb.set(k, v)
                     for q in self.service.getQ():
                         if not self.myAgent.askBelieve(q):
                             raise Exception("PostCondition " + str(q) + " not satisfied.")
                     return self.result
-                except Exception, e:
+                except Exception as e:
                     self.myAgent.DEBUG("Error executing RPC service: " + str(e), "error", "rpc")
                     self.result = False
                     return False

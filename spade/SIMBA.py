@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 import xmpp
 import threading
-import Agent
-import Envelope
-import FIPAMessage
-import AID
-import Behaviour
-import ACLParser
+from . import Agent
+from . import Envelope
+from . import FIPAMessage
+from . import AID
+from . import Behaviour
+from . import ACLParser
 import socket
-import SocketServer
+import socketserver
 
 SIMBAPORT = 20001
 
@@ -31,7 +31,7 @@ class SIMBA(Agent.PlatformAgent):
             try:
                 s.connect((ip, SIMBAPORT))
             except:
-                print "Could not connect to SIMBA socket on " + str(ip)
+                print("Could not connect to SIMBA socket on " + str(ip))
             s.send(str(msg))
             s.close()
 
@@ -43,23 +43,23 @@ class SIMBA(Agent.PlatformAgent):
                 for to in to_list:
                     self.sendToSimba(msg, to)
             else:
-                print "SIMBA::dying... it shouldn't happen"
+                print("SIMBA::dying... it shouldn't happen")
 
     class InboxBehaviour(Behaviour.Behaviour):
         '''
         Behaviour that routes incoming SIMBA messages
         '''
 
-        class SimbaRequestHandler(SocketServer.DatagramRequestHandler):
+        class SimbaRequestHandler(socketserver.DatagramRequestHandler):
             '''
             Request handler for SIMBA messages
             '''
             def handle(self):
-                print "SIMBA SS: New incoming message"
+                print("SIMBA SS: New incoming message")
 
         def onStart(self):
-            self.SS = SocketServer.ThreadingUDPServer(("", SIMBAPORT), SimbaRequestHandler)
-            print "SIMBA SS listening on port ", SIMBAPORT
+            self.SS = socketserver.ThreadingUDPServer(("", SIMBAPORT), SimbaRequestHandler)
+            print("SIMBA SS listening on port ", SIMBAPORT)
             self.SS.serve_forever()
 
     def __init__(self, node, password, server, port):

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from pyparsing import *
+from .pyparsing import *
 import sys
 
 
@@ -32,9 +32,9 @@ class SL0Parser:
             self.bnf.validate()
             #print "BNF VALID!!!"
 
-        except Exception, err:
-            print "ERROR: BNF NOT VALID!!!"
-            print err
+        except Exception as err:
+            print("ERROR: BNF NOT VALID!!!")
+            print(err)
             #sys.exit(-1)
 
     def parse(self, string):
@@ -46,14 +46,14 @@ class SL0Parser:
         m = None
         try:
             m = self.bnf.parseString(str(string))
-        except ParseException, err:
-            print err.line
-            print " " * (err.column - 1) + "|"
-            print err
+        except ParseException as err:
+            print(err.line)
+            print(" " * (err.column - 1) + "|")
+            print(err)
             #sys.exit(-1)
-        except Exception, err:
-            print "Unknown Parsing Exception"
-            print err
+        except Exception as err:
+            print("Unknown Parsing Exception")
+            print(err)
             #sys.exit(-1)
 
         return m
@@ -66,14 +66,14 @@ class SL0Parser:
 
         try:
             m = self.bnf.parseFile(file)
-        except ParseException, err:
-            print err.line
-            print " " * (err.column - 1) + "|"
-            print err
+        except ParseException as err:
+            print(err.line)
+            print(" " * (err.column - 1) + "|")
+            print(err)
             sys.exit(-1)
-        except Exception, err:
-            print "Unkwonw Exception"
-            print err
+        except Exception as err:
+            print("Unkwonw Exception")
+            print(err)
             sys.exit(-1)
 
         return m
@@ -83,15 +83,15 @@ if __name__ == "__main__":
     msg = p.parse("((prueba :name (set (bla uno) (bla dos))))")
     #msg = p.parseFile("message.sl0")
     #print repr(msg)
-    print msg.asXML()
-    print msg.asList()
+    print(msg.asXML())
+    print(msg.asList())
     #print "--------------------"
     #print msg.action['agent-identifier'].addresses.keys()
     #print msg.action['agent-identifier'].addresses.sequence[1]
 
-    print msg.prueba.name.set
+    print(msg.prueba.name.set)
     for cosa in msg.prueba.name.set:
-        print cosa
+        print(cosa)
     """
     print msg.prueba.name.set.bla
     print msg.prueba.name.set.bla.keys()
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     print "--"
     print msg.prueba.name.set.values()
     """
-    print "--"
+    print("--")
 
     slgrande = """((result
       (search
@@ -153,10 +153,10 @@ xmpp://df.alien3.dsic.upv.es
 :ownership SPADE
 :state active)
  )))"""
-    from DF import DfAgentDescription
+    from .DF import DfAgentDescription
     msg = p.parse(slgrande)
-    print msg
+    print(msg)
     for dfd in msg.result.search.set:
         d = DfAgentDescription()
         d.loadSL0(dfd[1])
-        print str(d)
+        print(str(d))

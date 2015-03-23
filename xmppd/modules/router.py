@@ -65,8 +65,8 @@ class Router(PlugIn):
         to = stanza['to']
         if not to:
             return False
-        for k, p in self._owner.plugins.items():
-            if 'jid' in p.keys() and p['jid'] == to.getDomain():
+        for k, p in list(self._owner.plugins.items()):
+            if 'jid' in list(p.keys()) and p['jid'] == to.getDomain():
                 try:
                     self.DEBUG("Dispatching stanza to %s plugin" % (k), "info")
                     exec("self._owner." + k + ".dispatch(session,stanza)")
@@ -181,9 +181,9 @@ class Router(PlugIn):
 
             else:
 
-                if barejid not in self._data.keys():
+                if barejid not in list(self._data.keys()):
                     self._data[barejid] = {}
-                if resource not in self._data[barejid].keys():
+                if resource not in list(self._data[barejid].keys()):
                     self._data[barejid][resource] = Presence(frm=jid, typ=typ)
                 bp = self._data[barejid][resource]
 
@@ -214,15 +214,15 @@ class Router(PlugIn):
                 self.broadcastAvailable(session)  # Pass onto broadcaster!
 
             if self._owner._socker is not None:
-                self._owner._socker.add_data_root({'jid': {barejid: self._data[barejid].keys()}})
-                self._owner._socker.add_data({'jid': {barejid: self._data[barejid].keys()}})
+                self._owner._socker.add_data_root({'jid': {barejid: list(self._data[barejid].keys())}})
+                self._owner._socker.add_data({'jid': {barejid: list(self._data[barejid].keys())}})
 
         elif (typ == 'unavailable' or typ == 'error'):  # and fromOutside == False:
 
             if not fromOutside:
                 jid_info = self._owner.tool_split_jid(barejid)
                 contacts = session.getRoster()
-                for k, v in contacts.iteritems():
+                for k, v in contacts.items():
                     if v['subscription'] in ['from', 'both']:
                         self.DEBUG('Un-Presence attempt for contact "%s":' % k, 'warn')
                         p = Presence(to=k, frm=session.peer, typ='unavailable')
@@ -269,7 +269,7 @@ class Router(PlugIn):
                 self._owner._socker.remove_data_root(['jid', barejid])
                 self._owner._socker.remove_data(['jid', barejid])
 
-            if barejid not in self._data.keys() and raiseFlag is True:
+            if barejid not in list(self._data.keys()) and raiseFlag is True:
                 raise NodeProcessed
             #if self._data[barejid].has_key(resource): del self._data[barejid][resource]
             #self.update(barejid)
@@ -280,7 +280,7 @@ class Router(PlugIn):
 
             jid_info = self._owner.tool_split_jid(barejid)
             contacts = session.getRoster()
-            for k, v in contacts.iteritems():
+            for k, v in contacts.items():
                 self.DEBUG('Un-Presence attempt for contact [INVISIBLE!!!]"%s":' % k, 'warn')
                 p = Presence(to=k, frm=session.peer, typ='unavailable')
                 status = stanza.getTag('status')
@@ -301,7 +301,7 @@ class Router(PlugIn):
                 try:
                     resources = [stanza.getTo().getResource()]
                     if not resources[0]:
-                        resources = self._data[stanza.getTo()].keys()
+                        resources = list(self._data[stanza.getTo()].keys())
                     flag = 1
                     for resource in resources:
                         p = Presence(to=stanza.getFrom(), frm='%s/%s' % (stanza.getTo(), resource), node=self._data[stanza.getTo()][resource])
@@ -316,9 +316,9 @@ class Router(PlugIn):
                         #TODO: test if contact is authorized to know its presence
                     bareto = stanza.getTo().getStripped()
                     #resourceto = stanza.getTo().getResource()
-                    if bareto in self._data.keys():
+                    if bareto in list(self._data.keys()):
                         #if self._data[bareto].has_key(resourceto):
-                        for resourceto in self._data[bareto].keys():
+                        for resourceto in list(self._data[bareto].keys()):
                             p = copy.copy(self._data[bareto][resourceto])
                             p.setTo(barejid)
                             s = None
@@ -361,7 +361,7 @@ class Router(PlugIn):
         #print "MY CONTACTS: "+ str(contacts)
 
         #for x,y in contacts.iteritems():
-        for x, y in contacts.items():
+        for x, y in list(contacts.items()):
             #x_split = self._owner.tool_split_jid(x)
             j = JID(x)
             name = j.getNode()
@@ -411,9 +411,9 @@ class Router(PlugIn):
                         #p = Presence(to=x,frm=session.peer,typ='probe')
                         #p.setAttr('type','probe')
                         #session.dispatch(p)
-                        if str(x) in self._data.keys():
+                        if str(x) in list(self._data.keys()):
                             # Send the presence information of this client
-                            for res in self._data[str(x)].keys():
+                            for res in list(self._data[str(x)].keys()):
                                 session.enqueue(self._data[x][res])
                         elif x in self._owner.servernames or str(x) in self._owner.servernames:
                             # Generate an 'available' presence on our behalf (the server is always available)
@@ -428,14 +428,14 @@ class Router(PlugIn):
 
                         self.DEBUG('Finished for "%s" (to/both)' % x, 'info')
 
-            except Exception, err:
+            except Exception as err:
                 self.DEBUG("PRESENCE_BROADCAST_ERR: %s\nx:%s\ny:%s" % (err, x, y), 'error')
 
     def update(self, barejid):
         self.DEBUG("Router update", "info")
         pri = -1
         s = None
-        for resource in self._data[barejid].keys():
+        for resource in list(self._data[barejid].keys()):
             rpri = int(self._data[barejid][resource].getTagData('priority'))
             if rpri > pri:
                 s = self._owner.getsession(barejid + '/' + resource)
@@ -589,11 +589,11 @@ class Router(PlugIn):
                 # Create roster for this contact
                 #print "### JFROM = %s %s  ;  BARETO = %s"%(jfrom_node, jfrom_node, bareto)
                 # F?CKING inbound-outbound control schema
-                if inbound_contact and 'subscription' in inbound_contact.keys():
+                if inbound_contact and 'subscription' in list(inbound_contact.keys()):
                     subs = inbound_contact['subscription']
                 else:
                     subs = "none"
-                if inbound_contact and 'state' in inbound_contact.keys():
+                if inbound_contact and 'state' in list(inbound_contact.keys()):
                     state = inbound_contact['state']
                 else:
                     state = ""
@@ -632,11 +632,11 @@ class Router(PlugIn):
             if outbound:
                 try:
                     # F?CKING inbound-outbound control schema
-                    if outbound_contact and 'subscription' in outbound_contact.keys():
+                    if outbound_contact and 'subscription' in list(outbound_contact.keys()):
                         subs = outbound_contact['subscription']
                     else:
                         subs = "none"
-                    if outbound_contact and 'state' in outbound_contact.keys():
+                    if outbound_contact and 'state' in list(outbound_contact.keys()):
                         state = outbound_contact['state']
                     else:
                         state = ""
@@ -689,11 +689,11 @@ class Router(PlugIn):
                 #print "### JFROM = %s %s  ;  BARETO = %s"%(jfrom_node, jfrom_node, bareto)
                 try:
                     # F?CKING inbound-outbound control schema
-                    if inbound_contact and 'subscription' in inbound_contact.keys():
+                    if inbound_contact and 'subscription' in list(inbound_contact.keys()):
                         subs = inbound_contact['subscription']
                     else:
                         subs = "none"
-                    if inbound_contact and 'state' in inbound_contact.keys():
+                    if inbound_contact and 'state' in list(inbound_contact.keys()):
                         state = inbound_contact['state']
                     else:
                         state = ""
@@ -717,7 +717,7 @@ class Router(PlugIn):
                         inbound_contact = {}
                     inbound_contact.update({'subscription': subs})
                     inbound_contact.update({'state': state})
-                    if 'ask' in inbound_contact.keys():
+                    if 'ask' in list(inbound_contact.keys()):
                         del inbound_contact['ask']
                     self._owner.DB.save_to_roster(to.getDomain(), to.getNode(), frm, inbound_contact)
 
@@ -730,11 +730,11 @@ class Router(PlugIn):
             if outbound:
                 try:
                     # F?CKING inbound-outbound control schema
-                    if outbound_contact and 'subscription' in outbound_contact.keys():
+                    if outbound_contact and 'subscription' in list(outbound_contact.keys()):
                         subs = outbound_contact['subscription']
                     else:
                         subs = None
-                    if outbound_contact and 'state' in outbound_contact.keys():
+                    if outbound_contact and 'state' in list(outbound_contact.keys()):
                         state = outbound_contact['state']
                     else:
                         state = None
@@ -773,14 +773,14 @@ class Router(PlugIn):
             # 2.3 Send an available presence probe on behalf of the one who allows subscription
             try:
                 barefrom = JID(frm).getStripped()
-                if barefrom in self._data.keys():
-                    for pres in self._data[barefrom].values():
+                if barefrom in list(self._data.keys()):
+                    for pres in list(self._data[barefrom].values()):
                         pres_c = copy.copy(pres)
                         pres_c.setType('available')
                         pres_c.setTo(bareto)
                         s.enqueue(pres_c)
-            except Exception, e:
-                print "### EXCEPTION " + str(e)
+            except Exception as e:
+                print("### EXCEPTION " + str(e))
 
             #print "### PRESENCE STANZA ON BEHALF OF " + barefrom
             #self._owner.DB.print_database()
@@ -804,11 +804,11 @@ class Router(PlugIn):
                 #print "### JFROM = %s %s  ;  BARETO = %s"%(jfrom_node, jfrom_node, bareto)
                 try:
                     # F?CKING inbound-outbound control schema
-                    if inbound_contact and 'subscription' in inbound_contact.keys():
+                    if inbound_contact and 'subscription' in list(inbound_contact.keys()):
                         subs = inbound_contact['subscription']
                     else:
                         subs = "none"
-                    if inbound_contact and 'state' in inbound_contact.keys():
+                    if inbound_contact and 'state' in list(inbound_contact.keys()):
                         state = inbound_contact['state']
                     else:
                         state = ""
@@ -846,11 +846,11 @@ class Router(PlugIn):
             if outbound:
                 try:
                     # F?CKING inbound-outbound control schema
-                    if outbound_contact and 'subscription' in outbound_contact.keys():
+                    if outbound_contact and 'subscription' in list(outbound_contact.keys()):
                         subs = outbound_contact['subscription']
                     else:
                         subs = "none"
-                    if outbound_contact and 'state' in outbound_contact.keys():
+                    if outbound_contact and 'state' in list(outbound_contact.keys()):
                         state = outbound_contact['state']
                     else:
                         state = ""
@@ -914,11 +914,11 @@ class Router(PlugIn):
                 #print "### JFROM = %s %s  ;  BARETO = %s"%(jfrom_node, jfrom_node, bareto)
                 try:
                     # F?CKING inbound-outbound control schema
-                    if inbound_contact and 'subscription' in inbound_contact.keys():
+                    if inbound_contact and 'subscription' in list(inbound_contact.keys()):
                         subs = inbound_contact['subscription']
                     else:
                         subs = "none"
-                    if inbound_contact and 'state' in inbound_contact.keys():
+                    if inbound_contact and 'state' in list(inbound_contact.keys()):
                         state = inbound_contact['state']
                     else:
                         state = ""
@@ -959,11 +959,11 @@ class Router(PlugIn):
             if outbound:
                 try:
                     # F?CKING inbound-outbound control schema
-                    if outbound_contact and 'subscription' in outbound_contact.keys():
+                    if outbound_contact and 'subscription' in list(outbound_contact.keys()):
                         subs = outbound_contact['subscription']
                     else:
                         subs = "none"
-                    if outbound_contact and 'state' in outbound_contact.keys():
+                    if outbound_contact and 'state' in list(outbound_contact.keys()):
                         state = outbound_contact['state']
                     else:
                         state = ""
@@ -1290,7 +1290,7 @@ class Router(PlugIn):
 
     def karmatize_me_captain(self, s, stanza):
         karma = s.getKarma()
-        data_len = len(unicode(stanza))
+        data_len = len(str(stanza))
         if karma is not None and time.time() - karma['last_time'] >= 60:  # reset counters and stuff!
             karma['last_time'] == time.time()
             karma['tot_up'] = 0
@@ -1376,7 +1376,7 @@ class Router(PlugIn):
         getsession = self._owner.getsession
         if not self.isFromOutside(domain):
         #if domain in self._owner.servernames or domain in self._owner.components.keys():
-            for v in self._owner.components.values():
+            for v in list(self._owner.components.values()):
                 try:
                     #if domain in v['jid']:
                     if v['jid'] in domain:
@@ -1449,7 +1449,7 @@ class Router(PlugIn):
             highest_pri = {'pri': 0, 's': None}
             s = None
             try:
-                for resource in self._data[bareto].keys():
+                for resource in list(self._data[bareto].keys()):
                     rpri = int(self._data[bareto][resource].getTagData('priority'))
                     if rpri > pri and rpri >= highest_pri['pri']:
                         highest_pri['pri'] = rpri
@@ -1494,7 +1494,7 @@ class Router(PlugIn):
 
                     # all probes already processed so safely assuming "other" type
                     ps = None
-                    for resource in self._data[bareto].keys():
+                    for resource in list(self._data[bareto].keys()):
                         ps = getsession(bareto + '/' + resource)
                         if ps:
                             ps.enqueue(stanza)

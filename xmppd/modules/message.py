@@ -21,14 +21,14 @@ class MessageCatcher(PlugIn):
         self._owner.Dispatcher.UnregisterHandler('message', self.messageHandler)
 
     def messageHandler(self, session, stanza):
-        print "MH ", str(stanza)
+        print("MH ", str(stanza))
         try:
             body = stanza.getBody()
             split_jid = session.getSplitJID()
             bare_jid = session.getBareJID()
             if body == '1':
                 out_body = 'The items below show each resource, its priority, last date of activity, and total connection time:\nNote: All times in GMT.\n\n'
-                for resource in self._owner.Router._data[bare_jid].keys():
+                for resource in list(self._owner.Router._data[bare_jid].keys()):
                     cr = self._owner.Router._data[bare_jid][resource]
                     s = self._owner.getsession(bare_jid + '/' + resource)
                     out_body += 're:%s pri:%s last:%s up:%s\n' % (resource, cr.getPriority(), time.strftime('%m-%d-%y %H:%M:%S', time.gmtime(s.last_seen)), self.readableTimeDurration(time.time() - s.conn_since))
@@ -37,7 +37,7 @@ class MessageCatcher(PlugIn):
                 out_body = ''
                 data = []
                 item = 1
-                for resource in self._owner.Router._data[bare_jid].keys():
+                for resource in list(self._owner.Router._data[bare_jid].keys()):
                     if resource != session.getResource():
                         s = self._owner.getsession(bare_jid + '/' + resource)
                         s.enqueue(Message(to=s.peer, body='Hello,\nThis location has been remotely disconnected.', frm=session.ourname))
@@ -91,7 +91,7 @@ class MessageCatcher(PlugIn):
                 if roster is None:
                     out_body += 'No data found.'
                 else:
-                    for x, y in roster.iteritems():
+                    for x, y in roster.items():
                         out_body += '%s=%s\n' % (x, y)
 
             else:
@@ -106,6 +106,6 @@ The following menu below will give you options to choose from:
             M = Message(to=session.peer, body=out_body, frm=session.ourname)
     #        print dir(M)
             session.enqueue(M)
-        except Exception, val:
+        except Exception as val:
             self.DEBUG('MESSAGE HANDLER CRASHED!\n%s' % val, 'error')
         raise NodeProcessed

@@ -30,7 +30,7 @@ class ROSTER(PlugIn):
                     subscription = kid.getAttr('subscription')
                     if subscription is not None:
                         info.update({'subscription': subscription})
-                    elif kid.getAttr('jid') not in the_roster.keys() or ('subscription' in the_roster[kid.getAttr('jid')]) is False:
+                    elif kid.getAttr('jid') not in list(the_roster.keys()) or ('subscription' in the_roster[kid.getAttr('jid')]) is False:
                         self.DEBUG('Wow, subscription is not active -- better create one pronto!', 'warn')
                         #kid.setAttr('subscription','none')
                         info.update({'subscription': 'none'})
@@ -113,7 +113,7 @@ class ROSTER(PlugIn):
             atag = out.T.query.NT.item
             atag.setAttr('jid', str(contact))
             if item:
-                for key, value in item.items():
+                for key, value in list(item.items()):
                     if key != 'state':
                         try:
                             atag.setAttr(key, value)
@@ -129,7 +129,7 @@ class ROSTER(PlugIn):
 
             barejid = session.getBareJID()
             try:
-                for resource in self._owner.Router._data[barejid].keys():
+                for resource in list(self._owner.Router._data[barejid].keys()):
                     s = self._owner.getsession(barejid + '/' + resource)
                     s.send(out)
             except:
@@ -173,7 +173,7 @@ class ROSTER(PlugIn):
             groups = session.getGroups()
             atag.setAttr('jid', bareto)
             try:
-                for x, y in session.getRoster()[bareto].iteritems():
+                for x, y in session.getRoster()[bareto].items():
                     atag.setAttr(x, y)
             except:
                 pass
@@ -189,14 +189,14 @@ class ROSTER(PlugIn):
                 self._owner.DB.del_from_roster_jid(s_split_jid[1], s_split_jid[0], bareto, 'ask')
 
             if groups is not None:
-                for gn, gm in groups.iteritems():
+                for gn, gm in groups.items():
                     if bareto in gm:
                         atag.T.group.setData(gn)
                         break
             else:
                 atag.T.group.setData('My Friends')
             barejid = session.getBareJID()
-            for resource in self._owner.Router._data[barejid].keys():
+            for resource in list(self._owner.Router._data[barejid].keys()):
                 s = self._owner.getsession(barejid + '/' + resource)
                 s.send(out)
         self.DEBUG('#ROSTER#: Pushing one out! [COMPLETE]', 'warn')
@@ -206,7 +206,7 @@ class ROSTER(PlugIn):
         the_roster_guy = session.getRoster()
         if the_roster_guy is None:
             return
-        for k, v in the_roster_guy.items():
+        for k, v in list(the_roster_guy.items()):
             try:
                 atag = rep.T.query.NT.item
                 split_jid = self._owner.tool_split_jid(k)
@@ -216,19 +216,19 @@ class ROSTER(PlugIn):
                     name = None
                 groups = session.getGroups()
                 atag.setAttr('jid', k)
-                for x, y in v.items():
+                for x, y in list(v.items()):
                     atag.setAttr(x, y)
                 if atag.getAttr('name') is None and name is not None:
                     atag.setAttr('name', name)
                 if groups is not None:
-                    for gn, gm in groups.items():
+                    for gn, gm in list(groups.items()):
                         for igm in gm:
                             if igm == k:
                                 atag.NT.group.setData(gn)
                                 break
                 else:
                     atag.NT.group.setData('My Friends')
-            except Exception, e:
+            except Exception as e:
                 self.DEBUG("Exception in RosterPush: " + str(e), 'err')
         self.DEBUG("RosterPush sending " +str(rep), 'info')
         session.send(rep)
@@ -253,7 +253,7 @@ class ROSTER(PlugIn):
         if the_roster_guy is None:
             return
         #for k,v in the_roster_guy.iteritems():
-        for k, v in the_roster_guy.items():
+        for k, v in list(the_roster_guy.items()):
             atag = rep.T.query.NT.item
             split_jid = self._owner.tool_split_jid(k)
             if split_jid is not None:
@@ -262,13 +262,13 @@ class ROSTER(PlugIn):
                 name = None
             groups = session.getGroups()
             atag.setAttr('jid', k)
-            for x, y in v.iteritems():
+            for x, y in v.items():
                 atag.setAttr(x, y)
             if atag.getAttr('name') is None and name is not None:
                 atag.setAttr('name', name)
 
             if groups is not None:
-                for gn, gm in groups.iteritems():
+                for gn, gm in groups.items():
                     for igm in gm:
                         if igm == k:
                             atag.T.group.setData(gn)

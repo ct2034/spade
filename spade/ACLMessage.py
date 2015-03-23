@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-import AID
+from . import AID
 import random
 import string
-import cPickle as pickle
-import content
-from ACLParser import ACLxmlParser
+import pickle as pickle
+from . import content
+from .ACLParser import ACLxmlParser
 import xml
 import uuid
 import json

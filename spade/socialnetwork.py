@@ -124,7 +124,7 @@ class Roster:
         'both' - both agents are subscribed to their corresponding notifications
         '''
         item = self.getContact(jid)
-        if item and 'subscription' in item.keys():
+        if item and 'subscription' in list(item.keys()):
             return item['subscription']
         return 'none'
 

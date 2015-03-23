@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-import SocketServer
-import SimpleHTTPServer
-import urllib
+import socketserver
+import http.server
+import urllib.request, urllib.parse, urllib.error
 import copy
-import thread
+import _thread
 from threading import Thread
 import time
 import sys
@@ -14,7 +14,7 @@ from xmpp import *
 WEB_ADMIN_PORT = 8008
 
 
-class WebAdminHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+class WebAdminHandler(http.server.SimpleHTTPRequestHandler):
 #class WebAdminHandler(CGIHTTPServer.CGIHTTPRequestHandler):
 
     _body_template = "<table><tr><td class=cabecera colspan=2>#TOP#</td></tr><tr><td class=lateral>#MENU_LEFT#</td><td>#PANEL_RIGHT#</td></tr><tr><td>#BOTTOM#</td></tr></table>"
@@ -45,15 +45,15 @@ class WebAdminHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         d = dict()
         try:
             raw_vars = req.split("?")[1]
-            print "RAW_VARS", raw_vars
+            print("RAW_VARS", raw_vars)
             for raw in raw_vars.split("&"):
-                print raw
+                print(raw)
                 var = raw.split("=")
                 if len(var) > 1:
                     d[var[0]] = var[1]
                 else:
                     d[var[0]] = ""
-                print var
+                print(var)
         except:
             pass
 
@@ -67,14 +67,14 @@ class WebAdminHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         to = to.replace("%40", "@")
         to = to.replace("%2F", "/")
         stanza = Message(to=to, body=msg, frm=self.server.xmppd.servernames[0])
-        print "CREATED STANZA: " + str(stanza)
+        print("CREATED STANZA: " + str(stanza))
         s = None
         s = self.server.xmppd.getsession(to)
         if s:
-            print "SENDING MSG TO " + to
+            print("SENDING MSG TO " + to)
             s.enqueue(stanza)
         else:
-            print "NO SESSION FOR MESSAGE"
+            print("NO SESSION FOR MESSAGE")
         return
 
     def sendFIPAMsg(self, to, performative, content):
@@ -91,7 +91,7 @@ class WebAdminHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         self._body = self._body.replace("#PANEL_RIGHT#", """<h2>MAIN CONTROL PANEL</h2><br>#MAINCP#""")
 
     def do_POST(self):
-        print "POST"
+        print("POST")
 
         self._POST_REQ = ""
         try:
@@ -100,7 +100,7 @@ class WebAdminHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         except:
             pass
 
-        print "_POST_REQ:", self._POST_REQ
+        print("_POST_REQ:", self._POST_REQ)
 
         self.do_GET()
 
@@ -116,7 +116,7 @@ class WebAdminHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             vars = self.getVars("?" + self._POST_REQ)
         except:
             vars = self.getVars(request[1])
-        print page, vars
+        print(page, vars)
         self._content = ""
         # Switch page
         if page.endswith("css"):
@@ -126,7 +126,7 @@ class WebAdminHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 self.copyfile(f, self.wfile)
                 f.close()
             except:
-                print "Could not open file: ", page[1:]
+                print("Could not open file: ", page[1:])
         elif page == "/send":
             self.setPageTemplate()
             cp = """<table><tr><td>Send a Jabber message to agent """ + vars['to'] + """<br/>
@@ -188,7 +188,7 @@ class WebAdminHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             <table><tr><th colspan=2>Active Connections</th></tr>"""
             i = 0
             # We are going to list all the current routes present in the server
-            for cl in self.server.xmppd.routes.keys():
+            for cl in list(self.server.xmppd.routes.keys()):
                 # Now, for the presence information
                 j = JID(str(cl)).getStripped()
                 res = JID(str(cl)).getResource()
@@ -198,7 +198,7 @@ class WebAdminHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     #print "PRES_DATA: " + str(pres_data)
                     pres = pres_data[res]
                     #print "PRES: " + str(pres)
-                except Exception, e:
+                except Exception as e:
                     # There was no presence information
                     #print "EXCEPCION EN LA PRESENCIA"
                     #print str(e)
@@ -254,14 +254,14 @@ class WebAdmin(PlugIn):
         XMPPD_SERVER = server
         try:
             self.httpd = None
-            self.httpd = SocketServer.ThreadingTCPServer(('', WEB_ADMIN_PORT), WebAdminHandler)
+            self.httpd = socketserver.ThreadingTCPServer(('', WEB_ADMIN_PORT), WebAdminHandler)
             # This connects xmmpd with the request handler and server
             self.httpd.xmppd = self.server
             self.httpd.server_name = "SPADE_WEB_ADMIN"
             self.httpd.server_port = str(WEB_ADMIN_PORT)
             self.DEBUG("WebAdmin serving at port " + str(WEB_ADMIN_PORT), "ok")
             #print "WebAdmin: Serving at port", WEB_ADMIN_PORT
-            thread.start_new_thread(self.httpd.serve_forever, ())
+            _thread.start_new_thread(self.httpd.serve_forever, ())
             #self.httpd.serve_forever()
         except:
             self.DEBUG("WebAdmin Error: could not open port " + str(WEB_ADMIN_PORT), "error")

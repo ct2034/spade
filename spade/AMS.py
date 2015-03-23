@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 
-from Agent import PlatformAgent
-import AID
-import Behaviour
-from SL0Parser import *
+from .Agent import PlatformAgent
+from . import AID
+from . import Behaviour
+from .SL0Parser import *
 import copy
 
 import xmpp
 
 from spade.msgtypes import *
-from content import ContentObject
+from .content import ContentObject
 
 
 class AMS(PlatformAgent):
@@ -56,7 +56,7 @@ class AMS(PlatformAgent):
                         else:
                             aad.ownership = frm.getName()
 
-                        if frm.getName() not in self.myAgent.agentdb.keys():
+                        if frm.getName() not in list(self.myAgent.agentdb.keys()):
                             self.myAgent.agentdb[frm.getName()] = aad
                         elif self.myAgent.agentdb[frm.getName()].getOwnership() == aad.getOwnership():
                             self.myAgent.agentdb[frm.getName()] = aad
@@ -72,7 +72,7 @@ class AMS(PlatformAgent):
                         self.myAgent.DEBUG("AMS sends " + str(presence), "info")
                         self.myAgent.send(presence)
                     elif typ == "unsubscribe":
-                        if str(frm) in self.myAgent.agentdb.keys():
+                        if str(frm) in list(self.myAgent.agentdb.keys()):
                             del self.myAgent.agentdb[str(frm)]
                             self.myAgent.DEBUG("Agent " + str(frm) + " deregistered from AMS", "ok", "ams")
                         else:
@@ -108,7 +108,7 @@ class AMS(PlatformAgent):
                                 reply = msg.createReply()
                                 reply.setSender(self.myAgent.getAID())
                                 reply.setPerformative("refuse")
-                                reply.setContent("( " + msg.getContent() + "(unsuported-function " + content.keys()[0] + "))")
+                                reply.setContent("( " + msg.getContent() + "(unsuported-function " + list(content.keys())[0] + "))")
                                 self.myAgent.send(reply)
 
                                 return -1
@@ -122,7 +122,7 @@ class AMS(PlatformAgent):
                             ACLtemplate.setSender(msg.getSender())
                             template = (Behaviour.MessageTemplate(ACLtemplate))
 
-                            if "fipa:action" in co.keys() and "fipa:act" in co["fipa:action"].keys():
+                            if "fipa:action" in list(co.keys()) and "fipa:act" in list(co["fipa:action"].keys()):
                                 self.myAgent.DEBUG("AMS: " + str(co["fipa:action"]["fipa:act"]) + " request. " + str(co.asRDFXML()), "info", "ams")
                                 if co["fipa:action"]["fipa:act"] in ["register", "deregister"]:
                                     self.myAgent.addBehaviour(AMS.RegisterBehaviour(msg, content), template)
@@ -197,11 +197,11 @@ class AMS(PlatformAgent):
                 self.myAgent.send(reply)
 
             if "register" in self.content.action:
-                if aad.getAID().getName() not in self.myAgent.agentdb.keys():
+                if aad.getAID().getName() not in list(self.myAgent.agentdb.keys()):
 
                     try:
                         self.myAgent.agentdb[aad.getAID().getName()] = aad
-                    except Exception, err:
+                    except Exception as err:
                         reply.setPerformative("failure")
                         reply.setContent("(" + self.msg.getContent() + "(internal-error))")
                         self.myAgent.send(reply)
@@ -221,10 +221,10 @@ class AMS(PlatformAgent):
 
             elif "deregister" in self.content.action:
 
-                if aad.getAID().getName() in self.myAgent.agentdb.keys():
+                if aad.getAID().getName() in list(self.myAgent.agentdb.keys()):
                     try:
                         del self.myAgent.agentdb[aad.getAID().getName()]
-                    except Exception, err:
+                    except Exception as err:
                         reply.setPerformative("failure")
                         reply.setContent("(" + self.msg.getContent() + '(internal-error "could not deregister agent"))')
                         self.myAgent.send(reply)
@@ -346,7 +346,7 @@ class AMS(PlatformAgent):
                     if "max-results" in self.content.action.search["search-constraints"]:
                         try:
                             max = int(self.content.action.search["search-constraints"]["max-results"])
-                        except Exception, err:
+                        except Exception as err:
                             error = '(internal-error "max-results is not an integer")'
                 if error:
                     reply = self.msg.createReply()
@@ -359,7 +359,7 @@ class AMS(PlatformAgent):
                 result = []
                 if "ams-agent-description" in self.content.action.search:
                     aad = AmsAgentDescription(self.content.action.search['ams-agent-description'])
-                    for a in self.myAgent.agentdb.values():
+                    for a in list(self.myAgent.agentdb.values()):
                         if max >= 0:
                             if a.match(aad):
                                 result.append(a)
@@ -368,7 +368,7 @@ class AMS(PlatformAgent):
                             break
 
                 else:
-                    result = self.myAgent.agentdb.values()
+                    result = list(self.myAgent.agentdb.values())
 
                 content = "((result "  # TODO: + self.msg.getContent()
                 if len(result) > 0:
@@ -387,7 +387,7 @@ class AMS(PlatformAgent):
                 # Delete done (from previous reply)
                 del co["fipa:done"]
                 # Look for search constraints
-                if "constraints" in co["fipa:action"].keys():
+                if "constraints" in list(co["fipa:action"].keys()):
                     try:
                         max = int(co["fipa:action"]["constraints"])
                     except:
@@ -403,9 +403,9 @@ class AMS(PlatformAgent):
 
                 # Search for the results
                 result = []
-                if "fipa:argument" in co["fipa:action"].keys() and co["fipa:action"]["fipa:argument"]:
+                if "fipa:argument" in list(co["fipa:action"].keys()) and co["fipa:action"]["fipa:argument"]:
                     aad = AmsAgentDescription(co=co["fipa:action"]["fipa:argument"])
-                    for a in self.myAgent.agentdb.values():
+                    for a in list(self.myAgent.agentdb.values()):
                         if max >= 0:
                             if a.match(aad):
                                 result.append(a)
@@ -413,7 +413,7 @@ class AMS(PlatformAgent):
                         else:
                             break
                 else:
-                    result = self.myAgent.agentdb.values()
+                    result = list(self.myAgent.agentdb.values())
 
                 co2 = ContentObject(namespaces={"http://www.fipa.org/schemas/fipa-rdf0#": "fipa:"})
                 co2["fipa:result"] = []
@@ -448,7 +448,7 @@ class AMS(PlatformAgent):
 
                 try:
                     aad = AmsAgentDescription(self.content.action.modify['ams-agent-description'])
-                except Exception, err:
+                except Exception as err:
                     error = "(missing-argument ams-agent-description)"
                     self.myAgent.DEBUG("Modify: Missing argument in ams-agent-description", 'error', "ams")
                 #print "aad: " + str(aad.getAID().getName())
@@ -479,11 +479,11 @@ class AMS(PlatformAgent):
                     reply.setContent("(" + str(self.msg.getContent()) + " true)")
                     self.myAgent.send(reply)
 
-                if aad.getAID().getName() in self.myAgent.agentdb.keys():
+                if aad.getAID().getName() in list(self.myAgent.agentdb.keys()):
 
                     try:
                         self.myAgent.agentdb[aad.getAID().getName()] = aad
-                    except Exception, err:
+                    except Exception as err:
                         reply.setPerformative("failure")
                         reply.setContent("(" + self.msg.getContent() + "(internal-error))")
                         self.myAgent.send(reply)
@@ -506,7 +506,7 @@ class AMS(PlatformAgent):
             else:
                 #Language is RDF
                 co = self.msg.getContentObject()
-                if "fipa:argument" in co["fipa:action"].keys() and co["fipa:action"]["fipa:argument"]:
+                if "fipa:argument" in list(co["fipa:action"].keys()) and co["fipa:action"]["fipa:argument"]:
                     aad = AmsAgentDescription(co=co["fipa:action"]["fipa:argument"])
                 else:
                     error = "missing-argument ams-agent-description"
@@ -544,11 +544,11 @@ class AMS(PlatformAgent):
 
                     del co["fipa:done"]
 
-                if aad.getAID().getName() in self.myAgent.agentdb.keys():
+                if aad.getAID().getName() in list(self.myAgent.agentdb.keys()):
 
                     try:
                         self.myAgent.agentdb[aad.getAID().getName()] = aad
-                    except Exception, err:
+                    except Exception as err:
                         reply.setPerformative("failure")
                         co["fipa:error"] = "internal-error"
                         reply.setContentObject(co)

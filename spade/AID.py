@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from content import ContentObject
+from .content import ContentObject
 import copy
 
 
@@ -220,10 +220,10 @@ class aid:
         """
         returns a version of an AID in JSON format
         """
-	try:
-	    import json
-	except ImportError:
-	    import simplejson as json 
+        try:
+            import json
+        except ImportError:
+            import simplejson as json 
         return json.dumps(self.asContentObject())
 
     def asXML(self):

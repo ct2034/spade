@@ -58,8 +58,8 @@ parser.add_option("-d", "--debug",
 try:
     import event
 except:
-    print "Oops, you don't seem to have libevent and/or pyevent installed."
-    print "Please review the README file accompanying this software. Thank-you."
+    print("Oops, you don't seem to have libevent and/or pyevent installed.")
+    print("Please review the README file accompanying this software. Thank-you.")
     import sys
     sys.exit(1)
 
@@ -67,9 +67,9 @@ except:
 import socket
 import time
 import threading
-import thread
+import _thread
 import sys
-import xmlrpclib
+import xmlrpc.client
 import traceback
 
 # maximum allowed length of XML-RPC request (in bytes)
@@ -98,7 +98,7 @@ class Client:
                 new_server = self._owner.get_good_server(self._tguid)
                 if new_server is not None:
                     if globals()['cmd_options'].enable_debug is True:
-                        print "Connection to %(old_server)s failed; Using new server %(new_server)s" % {'old_server': server_guid, 'new_server': new_server}
+                        print("Connection to %(old_server)s failed; Using new server %(new_server)s" % {'old_server': server_guid, 'new_server': new_server})
                     self._sguid = new_server
                     self.connect(type_guid, new_server)
 
@@ -108,7 +108,7 @@ class Client:
         #Now connect
         destination = (self._owner.routes[type_guid][server_guid]['info']['host'], self._owner.routes[type_guid][server_guid]['info']['port'])
         if globals()['cmd_options'].enable_debug is True:
-            print "Connecting to ", destination
+            print("Connecting to ", destination)
         sock.connect(destination)
 
         s = Client(sock, self._owner, type_guid, server_guid, True)
@@ -158,7 +158,7 @@ class Client:
             linkup = self._owner.sockets[self._owner.links[self.fileno()]['fn']]['sock']
 
             if globals()['cmd_options'].enable_debug is True:
-                print "Terminating %s::%s" % (self.fileno(), linkup.fileno())
+                print("Terminating %s::%s" % (self.fileno(), linkup.fileno()))
             self._owner.link_manager('r', self)
             self._owner.unregistersession(linkup)
             # Handle forward socket
@@ -191,7 +191,7 @@ class RPC_Client:
             elif self.stage == XMLRPC_STAGE_ONE:
                 self.stage = XMLRPC_STAGE_TWO
 
-                params, method = xmlrpclib.loads(data)
+                params, method = xmlrpc.client.loads(data)
                 if isinstance(params[0], type({})):
                     aside = params[0]
                     aside['_socket'] = self._sock
@@ -199,12 +199,12 @@ class RPC_Client:
                     params = (aside,)
                 result = self.rpc_dispatch(method, params)
                 if getattr(result, 'faultCode', None) is not None:
-                    response = xmlrpclib.dumps(result)
+                    response = xmlrpc.client.dumps(result)
                 else:
-                    response = xmlrpclib.dumps(result, methodresponse=1)
+                    response = xmlrpc.client.dumps(result, methodresponse=1)
 
         except:
-            response = xmlrpclib.dumps(xmlrpclib.Fault(1, "Socker(tm): %s" % traceback.format_exc()))
+            response = xmlrpc.client.dumps(xmlrpc.client.Fault(1, "Socker(tm): %s" % traceback.format_exc()))
 
         if self.stage == XMLRPC_STAGE_TWO:
             final_output = ["HTTP/1.1 200 OK", "Server: BlueBridge Socker(tm)", "Content-Length: %i" % len(response), "Connection: close", "Content-Type: text/xml", "", response]
@@ -281,16 +281,16 @@ class RPC_Client:
 
     def export_broadcast(self, inpt):
 #        print inpt
-        if inpt['type_guid'] in self._owner.routes.keys():
+        if inpt['type_guid'] in list(self._owner.routes.keys()):
             node_list = []
             message = {'act': 'bc', 'stanza': inpt['stanza']}
-            for x in self._owner.routes[inpt['type_guid']].keys():
+            for x in list(self._owner.routes[inpt['type_guid']].keys()):
                 if x not in ['bind', 'data'] and x != inpt['server_guid']:
                     node_list += [x]
-                    if 'pass' in self._owner.routes[inpt['type_guid']][x]['info'].keys():
+                    if 'pass' in list(self._owner.routes[inpt['type_guid']][x]['info'].keys()):
                         message['pass'] = self._owner.routes[inpt['type_guid']][x]['info']['pass']
-                    xmlrpclib.ServerProxy(self._owner.routes[inpt['type_guid']][x]['info']['xmlrpc-callback']).socker(message)
-                    if 'pass' in message.keys():
+                    xmlrpc.client.ServerProxy(self._owner.routes[inpt['type_guid']][x]['info']['xmlrpc-callback']).socker(message)
+                    if 'pass' in list(message.keys()):
                         del message['pass']
 
             return {'code': 1, 'msg': 'BC-OK', 'nodes': node_list}
@@ -299,8 +299,8 @@ class RPC_Client:
 
     def export_hostname(self, inpt):
         if globals()['cmd_options'].enable_debug is True:
-            print inpt
-        if '_socket_info' in inpt.keys():
+            print(inpt)
+        if '_socket_info' in list(inpt.keys()):
             return {'code': 1, 'hostname': inpt['_socket_info'][0]}
         else:
             return {'code': 0, 'msg': 'Cannot detect your hostname!'}
@@ -309,20 +309,20 @@ class RPC_Client:
         if 'type_guid' in inpt and 'server_guid' in inpt and 'act' in inpt:
             try:
                 if inpt['act'] == 'add' and self.rpc_security(inpt) is True:
-                    print "[RPC:DATA] Added!"
-                    for x, y in inpt['add'].iteritems():
+                    print("[RPC:DATA] Added!")
+                    for x, y in inpt['add'].items():
                         if x not in self._owner.routes[inpt['type_guid']][inpt['server_guid']]['data']:
                             self._owner.routes[inpt['type_guid']][inpt['server_guid']]['data'][x] = y
                         else:
                             self._owner.routes[inpt['type_guid']][inpt['server_guid']]['data'][x].update(y)
 
                 elif inpt['act'] == 'get':
-                    data = eval("self._owner.routes[inpt['type_guid']][inpt['server_guid']]['data']" + ''.join(map(lambda x: "['" + x + "']", inpt['get'])))
+                    data = eval("self._owner.routes[inpt['type_guid']][inpt['server_guid']]['data']" + ''.join(["['" + x + "']" for x in inpt['get']]))
                     return {'code': 1, 'msg': 'RC-OK', 'rs': data}
 
                 elif inpt['act'] == 'remove' and self.rpc_security(inpt) is True:
-                    print "[RPC:DATA] Removed!"
-                    eval("self._owner.routes[inpt['type_guid']][inpt['server_guid']]['data']" + ''.join(map(lambda x: "['" + x + "']", inpt['remove'][:-1])) + ".pop('%s')" % inpt['remove'][-1])
+                    print("[RPC:DATA] Removed!")
+                    eval("self._owner.routes[inpt['type_guid']][inpt['server_guid']]['data']" + ''.join(["['" + x + "']" for x in inpt['remove'][:-1]]) + ".pop('%s')" % inpt['remove'][-1])
                 return {'code': 1, 'msg': 'RC-OK'}
             except:
                 return {'code': 0, 'msg': 'RC-BAD'}
@@ -330,20 +330,20 @@ class RPC_Client:
         elif 'type_guid' in inpt and 'act' in inpt:
             try:
                 if inpt['act'] == 'add':
-                    print "[RPC:DATA] Added!"
-                    for x, y in inpt['add'].iteritems():
+                    print("[RPC:DATA] Added!")
+                    for x, y in inpt['add'].items():
                         if x not in self._owner.routes[inpt['type_guid']]['data']:
                             self._owner.routes[inpt['type_guid']]['data'][x] = y
                         else:
                             self._owner.routes[inpt['type_guid']]['data'][x].update(y)
 
                 elif inpt['act'] == 'get':
-                    data = eval("self._owner.routes[inpt['type_guid']]['data']" + ''.join(map(lambda x: "['" + x + "']", inpt['get'])))
+                    data = eval("self._owner.routes[inpt['type_guid']]['data']" + ''.join(["['" + x + "']" for x in inpt['get']]))
                     return {'code': 1, 'msg': 'RC-OK', 'rs': data}
 
                 elif inpt['act'] == 'remove':
-                    print "[RPC:DATA] Removed!"
-                    eval("self._owner.routes[inpt['type_guid']]['data']" + ''.join(map(lambda x: "['" + x + "']", inpt['remove'][:-1])) + ".pop('%s')" % inpt['remove'][-1])
+                    print("[RPC:DATA] Removed!")
+                    eval("self._owner.routes[inpt['type_guid']]['data']" + ''.join(["['" + x + "']" for x in inpt['remove'][:-1]]) + ".pop('%s')" % inpt['remove'][-1])
             except:
                 return {'code': 0, 'msg': 'RC-BAD'}
             return {'code': 1, 'msg': 'RC-OK'}
@@ -351,10 +351,10 @@ class RPC_Client:
             return {'code': 0, 'msg': 'RC-BAD'}
 
     def export_getchain(self, inpt):
-        if 'type_guid' in inpt.keys():
+        if 'type_guid' in list(inpt.keys()):
             chain_data = {}
             try:
-                for x, y in self._owner.routes[inpt['type_guid']].iteritems():
+                for x, y in self._owner.routes[inpt['type_guid']].items():
                     if x not in ['bind', 'data']:
                         chain_data[x] = y['info']
                         chain_data[x]['active'] = len(self._owner.routes[inpt['type_guid']][x]['clients'])
@@ -378,13 +378,13 @@ class RPC_Client:
         else:
             import random
             import md5
-            t = long(time.time() * 1000)
-            r = long(random.random() * 100000000000000000L)
+            t = int(time.time() * 1000)
+            r = int(random.random() * 100000000000000000)
             try:
                 a = socket.gethostbyname(socket.gethostname())
             except:
                 # if we can't get a network address, just imagine one
-                a = random.random() * 100000000000000000L
+                a = random.random() * 100000000000000000
             data = str(t) + ' ' + str(r) + ' ' + str(a) + ' ' + str(args)
             data = md5.md5(data).hexdigest()
             return '{%s}' % data
@@ -394,7 +394,7 @@ class RPC_Client:
             options = {}
 
             for field in ['conn_max', 'xmlrpc-callback', 'pass']:
-                if field in inpt.keys():
+                if field in list(inpt.keys()):
                     options.update({field: inpt[field]})
 
             if inpt['outside_port'] == globals()['XMLRPC_PORT']:
@@ -409,7 +409,7 @@ class RPC_Client:
             else:
                 return {'code': 0, 'status': 'unknown error'}
         except:
-            return xmlrpclib.Fault(1, "Datastar RPC (%s): %s" % sys.exc_info()[:2])
+            return xmlrpc.client.Fault(1, "Datastar RPC (%s): %s" % sys.exc_info()[:2])
 
     def export_delete(self, inpt):
         try:
@@ -419,7 +419,7 @@ class RPC_Client:
             else:
                 return {'code': 0, 'status': 'unknown error'}
         except:
-            return xmlrpclib.Fault(1, "Datastar RPC: %s" % traceback.format_exc())
+            return xmlrpc.client.Fault(1, "Datastar RPC: %s" % traceback.format_exc())
 
 
 class Router:
@@ -431,7 +431,7 @@ class Router:
         self.socket_by_port = {}
         self.links = {}
         self.routes = {}
-        self.SESS_LOCK = thread.allocate_lock()
+        self.SESS_LOCK = _thread.allocate_lock()
         self.port_pool = []
 #        self.register_port(2005)
         self.register_xmlrpc_agent()
@@ -452,7 +452,7 @@ class Router:
 
         self.SESS_LOCK.release()
         if globals()['cmd_options'].enable_debug is True:
-            print "XMLRPC has been registered to port %i" % globals()['XMLRPC_PORT']
+            print("XMLRPC has been registered to port %i" % globals()['XMLRPC_PORT'])
         return True
 
     def register_port(self, outside_port, type_guid, server_guid, server_host, server_port, options=None):
@@ -465,7 +465,7 @@ class Router:
 
             self.port_pool += [outside_port]
             if globals()['cmd_options'].enable_debug is True:
-                print "We have registered port No. %i" % outside_port
+                print("We have registered port No. %i" % outside_port)
             r = self.registersession(s, 1, type_guid, server_guid, server_host, server_port, options)
             return {'mode': 1, 's': r}
         else:
@@ -478,13 +478,13 @@ class Router:
                 self.links[client.fileno()] = {'fn': server.fileno(), 'typ': 'server'}
                 self.links[server.fileno()] = {'fn': client.fileno(), 'typ': 'client'}
                 if globals()['cmd_options'].enable_debug is True:
-                    print "Link up between %s and %s is complete -- Tunneling" % (client.fileno(), server.fileno())
+                    print("Link up between %s and %s is complete -- Tunneling" % (client.fileno(), server.fileno()))
             elif mode == 'r':
                 other = self.links[client.fileno()]['fn']
                 del self.links[client.fileno()]
                 del self.links[other]
                 if globals()['cmd_options'].enable_debug is True:
-                    print "Link down between %s and %s is complete -- Tunnel closed" % (client.fileno(), other)
+                    print("Link down between %s and %s is complete -- Tunnel closed" % (client.fileno(), other))
         except:
             pass
 
@@ -494,12 +494,12 @@ class Router:
         if mode == 0:
             self.routes[type_guid][server_guid]['clients'] += [s]
         elif mode == 1 or mode == 3:
-            if type_guid in self.routes.keys() is False:
+            if type_guid in list(self.routes.keys()) is False:
                 self.routes[type_guid] = {}
             if mode == 1:
                 self.routes[type_guid]['bind'] = s
                 self.routes[type_guid]['data'] = {}
-            if server_guid in self.routes[type_guid].keys() is False:
+            if server_guid in list(self.routes[type_guid].keys()) is False:
                 self.routes[type_guid].update({server_guid: {'clients': [],
                                                              'info': {'port': server_port,
                                                                       'host': server_host},
@@ -509,13 +509,13 @@ class Router:
                 self.routes[type_guid][server_guid]['info'] = {'port': server_port, 'host': server_host, 'bind': s}
                 self.routes[type_guid][server_guid]['data'] = {}
             if isinstance(options, type({})):
-                for x, y in options.iteritems():
+                for x, y in options.items():
                     self.routes[type_guid][server_guid]['info'][x] = y
 
             if mode == 3:
                 self.SESS_LOCK.release()
                 if globals()['cmd_options'].enable_debug is True:
-                    print "registered secondary as type %s" % str(mode)
+                    print("registered secondary as type %s" % str(mode))
                 return s
             else:
                 self.types_by_port[str(s.getsockname()[1])] = type_guid
@@ -530,7 +530,7 @@ class Router:
             self.leventobjs[s.fileno()].add()  # Add agent to the queue.
         self.SESS_LOCK.release()
         if globals()['cmd_options'].enable_debug is True:
-            print "registered socket %s as type %s" % (s.fileno(), str(mode))
+            print("registered socket %s as type %s" % (s.fileno(), str(mode)))
         return s
 
     def unregistersession(self, s=None, type_guid=None, server_guid=None):
@@ -544,11 +544,11 @@ class Router:
                     return False
 
 #        if globals()['cmd_options'].enable_debug == True: print 'keys!!!!',len(self.routes[type_guid].keys()), self.routes[type_guid].keys()
-        if type_guid is not None and len(self.routes[type_guid].keys()) <= 2:
+        if type_guid is not None and len(list(self.routes[type_guid].keys())) <= 2:
             s = self.routes[type_guid]['bind']
             self.unregister_port(s)
 
-            if s.fileno() in self.leventobjs.keys() and self.leventobjs[s.fileno()] is not None:
+            if s.fileno() in list(self.leventobjs.keys()) and self.leventobjs[s.fileno()] is not None:
                 self.leventobjs[s.fileno()].delete()  # Kill libevent event
                 del self.leventobjs[s.fileno()]
 
@@ -567,15 +567,15 @@ class Router:
             pass
 
         if type_guid is None or server_guid is None and s is not None and s != 0:
-            if s.fileno() in self.leventobjs.keys() and self.leventobjs[s.fileno()] is not None:
+            if s.fileno() in list(self.leventobjs.keys()) and self.leventobjs[s.fileno()] is not None:
                 self.leventobjs[s.fileno()].delete()  # Kill libevent event
                 del self.leventobjs[s.fileno()]
             del self.sockets[s.fileno()]  # Destroy the record
             if globals()['cmd_options'].enable_debug is True:
-                print "UNregistered socket %s" % s.fileno()
+                print("UNregistered socket %s" % s.fileno())
         else:
             if globals()['cmd_options'].enable_debug is True:
-                print "UNregistered socket %s::%s" % (type_guid, server_guid)
+                print("UNregistered socket %s::%s" % (type_guid, server_guid))
         self.SESS_LOCK.release()
         return True
 
@@ -590,7 +590,7 @@ class Router:
             self.port_pool.remove(port)
             del self.types_by_port[str(port)]
             if globals()['cmd_options'].enable_debug is True:
-                print "UNREGISTERED PORT %i" % port
+                print("UNREGISTERED PORT %i" % port)
             return True
         except:
             return False
@@ -624,7 +624,7 @@ class Router:
                 server = self.get_good_server(type_guid)
                 if server is not None:
                     if globals()['cmd_options'].enable_debug is True:
-                        print "Using server %s" % server
+                        print("Using server %s" % server)
                     sess = Client(conn, self, type_guid, server)
                     self.registersession(sess, 0, self.types_by_port[str(port)], sess._sguid)
             elif port == globals()['XMLRPC_PORT']:
@@ -643,14 +643,14 @@ class Router:
 
     def get_good_server(self, type_guid):
         out = {'ratio': 2.0, 'server': None}
-        for server, info in self.routes[type_guid].iteritems():
+        for server, info in self.routes[type_guid].items():
             if server in ['bind', 'data']:
                 continue
             server_ratio = len(info['clients']) / (info['info']['conn_max'] * 1.0)
-            if 'conn_max' not in info['info'].keys():
+            if 'conn_max' not in list(info['info'].keys()):
                 info['info']['conn_max'] = 100  # Change all of this later
             if globals()['cmd_options'].enable_debug is True:
-                print "Info:", server, len(info['clients']), info['info']['conn_max'], server_ratio
+                print("Info:", server, len(info['clients']), info['info']['conn_max'], server_ratio)
             if len(info['clients']) < info['info']['conn_max'] and server_ratio < out['ratio']:
                 out['ratio'] = server_ratio
                 out['server'] = server
@@ -671,14 +671,14 @@ class Router:
     def broadcast_shutdown(self):
         message = {'act': 'sd', 'time': time.time()}
         server_num = 0
-        for y in self.routes.keys():
-            for x in self.routes[y].keys():
+        for y in list(self.routes.keys()):
+            for x in list(self.routes[y].keys()):
                 if x not in ['bind', 'data']:
-                    print x
-                    if 'pass' in self.routes[y][x]['info'].keys():
+                    print(x)
+                    if 'pass' in list(self.routes[y][x]['info'].keys()):
                         message['pass'] = self.routes[y][x]['info']['pass']
-                    xmlrpclib.ServerProxy(self.routes[y][x]['info']['xmlrpc-callback']).socker(message)
-                    if 'pass' in message.keys():
+                    xmlrpc.client.ServerProxy(self.routes[y][x]['info']['xmlrpc-callback']).socker(message)
+                    if 'pass' in list(message.keys()):
                         del message['pass']
                     server_num += 1
         return server_num

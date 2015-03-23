@@ -25,9 +25,9 @@ And a few other functions:
     diff, simp       Symbolic differentiation and simplification
 """
 
-from __future__ import generators
+
 import re
-import sys
+
 
 def every(predicate, seq):
     """True if every element of seq satisfies predicate.
@@ -96,7 +96,7 @@ class KB:
         if issubclass(query.__class__, str):
             query = expr(query)
         try:
-            return self.ask_generator(query).next()
+            return next(self.ask_generator(query))
         except StopIteration:
             return False
 
@@ -209,7 +209,7 @@ class Expr:
         "Op is a string or number; args are Exprs (or are coerced to Exprs)."
         assert isinstance(op, str) or (isnumber(op) and not args)
         self.op = num_or_str(op)
-        self.args = map(expr, args)  # Coerce args to Exprs
+        self.args = list(map(expr, args))  # Coerce args to Exprs
 
     def __call__(self, *args):
         """Self must be a symbol with no args, such as Expr('F').  Create a new
@@ -425,8 +425,8 @@ def is_definite_clause(s):
             (op == '>>' and every(is_positive, literals(s))))
 
 ## Useful constant Exprs used in examples and code:
-TRUE, FALSE, ZERO, ONE, TWO = map(Expr, ['TRUE', 'FALSE', 0, 1, 2])
-A, B, C, F, G, P, Q, x, y, z = map(Expr, 'ABCFGPQxyz')
+TRUE, FALSE, ZERO, ONE, TWO = list(map(Expr, ['TRUE', 'FALSE', 0, 1, 2]))
+A, B, C, F, G, P, Q, x, y, z = list(map(Expr, 'ABCFGPQxyz'))
 
 #______________________________________________________________________________
 
@@ -561,7 +561,7 @@ def eliminate_implications(s):
     """
     if not s.args or is_symbol(s.op):
         return s  # (Atoms are unchanged.)
-    args = map(eliminate_implications, s.args)
+    args = list(map(eliminate_implications, s.args))
     a, b = args[0], args[-1]
     if s.op == '>>':
         return (b | ~a)
@@ -588,14 +588,14 @@ def move_not_inwards(s):
         if a.op == '~':
             return move_not_inwards(a.args[0])  # ~~A ==> A
         if a.op == '&':
-            return NaryExpr('|', *map(NOT, a.args))
+            return NaryExpr('|', *list(map(NOT, a.args)))
         if a.op == '|':
-            return NaryExpr('&', *map(NOT, a.args))
+            return NaryExpr('&', *list(map(NOT, a.args)))
         return s
     elif is_symbol(s.op) or not s.args:
         return s
     else:
-        return Expr(s.op, *map(move_not_inwards, s.args))
+        return Expr(s.op, *list(map(move_not_inwards, s.args)))
 
 
 def distribute_and_over_or(s):
@@ -618,10 +618,10 @@ def distribute_and_over_or(s):
             rest = others[0]
         else:
             rest = NaryExpr('|', *others)
-        return NaryExpr('&', *map(distribute_and_over_or,
-                                  [(c | rest) for c in conj.args]))
+        return NaryExpr('&', *list(map(distribute_and_over_or,
+                                  [(c | rest) for c in conj.args])))
     elif s.op == '&':
-        return NaryExpr('&', *map(distribute_and_over_or, s.args))
+        return NaryExpr('&', *list(map(distribute_and_over_or, s.args)))
     else:
         return s
 
@@ -1103,12 +1103,12 @@ def test_ask(q):
     ans = fol_bc_ask(test_kb, [e])
     res = []
     for a in ans:
-        res.append(pretty(dict([(x, v) for (x, v) in a.items() if x in vars])))
+        res.append(pretty(dict([(x, v) for (x, v) in list(a.items()) if x in vars])))
     res.sort(key=str)
     return res
 
 test_kb = FolKB(
-    map(expr, ['Farmer(Mac)',
+    list(map(expr, ['Farmer(Mac)',
                'Rabbit(Pete)',
                'Mother(MrsMac, Mac)',
                'Mother(MrsRabbit, Pete)',
@@ -1120,7 +1120,7 @@ test_kb = FolKB(
                # would result in infinite recursion:
                #'(Human(h) & Mother(m, h)) ==> Human(m)'
                '(Mother(m, h) & Human(h)) ==> Human(m)'
-               ])
+               ]))
 )
 
 
@@ -1204,13 +1204,13 @@ def subst_compose(s1, s2):
     True
     """
     sc = {}
-    for x, v in s1.items():
+    for x, v in list(s1.items()):
         if v in s2:
             w = s2[v]
             sc[x] = w  # x -> v -> w
         else:
             sc[x] = v
-    for x, v in s2.items():
+    for x, v in list(s2.items()):
         if not (x in s1):
             sc[x] = v
         # otherwise s1[x] preemptys s2[x]
@@ -1261,7 +1261,7 @@ def diff(y, x):
 def simp(x):
     if not x.args:
         return x
-    args = map(simp, x.args)
+    args = list(map(simp, x.args))
     u, op, v = args[0], x.op, args[-1]
     if op == '+':
         if v == ZERO:
@@ -1354,7 +1354,7 @@ def pretty_dict(d):
     def format(k, v):
         return "%s: %s" % (repr(k), repr(v))
 
-    ditems = d.items()
+    ditems = list(d.items())
     ditems.sort(key=str)
     k, v = ditems[0]
     dpairs = format(k, v)
@@ -1378,7 +1378,7 @@ def pretty_set(s):
 
 
 def pp(x):
-    print pretty(x)
+    print(pretty(x))
 
 
 def ppsubst(s):
@@ -1387,24 +1387,11 @@ def ppsubst(s):
 
 
 def ppdict(d):
-    print pretty_dict(d)
+    print(pretty_dict(d))
 
 
 def ppset(s):
-    print pretty_set(s)
-
-
-def get_object_type(classname, modulename):
-    '''Get an object's type
-       Thanks to: http://stackoverflow.com/a/13292940'''
-    __import__(modulename)
-    return getattr(sys.modules[modulename], classname)
-
-def get_object_instance(classname, modulename, param={}):
-    '''Get an object's instance by classname and modulename
-       Thanks to: http://stackoverflow.com/a/13292940'''
-    return get_object_type(classname, modulename)(**param)
-
+    print(pretty_set(s))
 
 #________________________________________________________________________
 

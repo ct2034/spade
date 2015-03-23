@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import xml.sax
 from xml.sax import handler
-from BasicFipaDateTime import *
-from AID import *
-from ReceivedObject import ReceivedObject
-import Envelope
+from .BasicFipaDateTime import *
+from .AID import *
+from .ReceivedObject import ReceivedObject
+from . import Envelope
 
 
 class XMLCodec(handler.ContentHandler):
@@ -296,7 +296,7 @@ class XMLCodec(handler.ContentHandler):
             self.env.setAclRepresentation(self.accumulator)
 
         elif self.LENGTH_TAG.lower() == localName.lower():
-            self.env.setPayloadLength(long(self.accumulator))
+            self.env.setPayloadLength(int(self.accumulator))
             """
             if(logger.isLoggable(Logger.WARNING))
                 logger.log(Logger.FINE,"Length: "+env.getPayloadLength());

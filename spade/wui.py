@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
-import SocketServer
-import SimpleHTTPServer
-import BaseHTTPServer
-import pyratemp
+import socketserver
+import http.server
+import http.server
+from . import pyratemp
 import os
 import sys
 import traceback
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import time
 import random
 import socket
-import Cookie
+import http.cookies
 import string
 import time
 
@@ -46,8 +46,8 @@ class WUI(Thread):
         timeout = 5
         while self.httpd is None and timeout > 0:
             try:
-                SocketServer.ThreadingTCPServer.allow_reuse_address = True
-                self.httpd = SocketServer.ThreadingTCPServer(('', self.port), WUIHandler)
+                socketserver.ThreadingTCPServer.allow_reuse_address = True
+                self.httpd = socketserver.ThreadingTCPServer(('', self.port), WUIHandler)
                 self.httpd.owner = self
                 self.httpd.timeout = 1
             except Exception:
@@ -78,7 +78,7 @@ class WUI(Thread):
             try:
                 self.httpd.shutdown()
                 self.httpd.server_close()
-            except Exception, e:
+            except Exception as e:
                 pass
             self.httpd = None
 
@@ -130,7 +130,7 @@ def generateRandom(length):
     return ''.join([random.choice(chars) for i in range(length)])
 
 
-class WUIHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+class WUIHandler(http.server.SimpleHTTPRequestHandler):
 
     def log_message(format, *args):
         pass
@@ -173,18 +173,18 @@ class WUIHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 var = raw.split("=")
                 if len(var) > 1:
                     # Check if this is a multi-valued var
-                    if var[0] in d.keys():
+                    if var[0] in list(d.keys()):
                         try:
                             # Try to append value to the list
-                            d[var[0]].append(urllib.unquote_plus(var[1]))
+                            d[var[0]].append(urllib.parse.unquote_plus(var[1]))
                         except:
                             # Create a list with the current value and append the new one
                             d[var[0]] = [d[var[0]]]
-                            d[var[0]].append(urllib.unquote_plus(var[1]))
+                            d[var[0]].append(urllib.parse.unquote_plus(var[1]))
                     else:
-                        d[urllib.unquote_plus(var[0])] = urllib.unquote_plus(var[1])
+                        d[urllib.parse.unquote_plus(var[0])] = urllib.parse.unquote_plus(var[1])
                 else:
-                    d[urllib.unquote_plus(var[0])] = ""
+                    d[urllib.parse.unquote_plus(var[0])] = ""
         except:
             pass
 
@@ -221,7 +221,7 @@ class WUIHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             req_vars = self.getVars(request[1])
 
         s_vars = ""
-        for k, v in req_vars.items():
+        for k, v in list(req_vars.items()):
             if k:
                 v = str(v)
                 if not v.startswith('"') and not v.startswith("'") and not v.startswith("["):
@@ -232,9 +232,9 @@ class WUIHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
         #session management
         if 'cookie' in self.headers:
-            self.cookie = Cookie.SimpleCookie(self.headers.getheader("cookie"))
+            self.cookie = http.cookies.SimpleCookie(self.headers.getheader("cookie"))
         else:
-            self.cookie = Cookie.SimpleCookie()
+            self.cookie = http.cookies.SimpleCookie()
 
         # Switch page
         #if page.endswith("css"):
@@ -262,7 +262,7 @@ class WUIHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
             try:
                 self.send_response(200)
-                for morsel in self.cookie.values():
+                for morsel in list(self.cookie.values()):
                     self.send_header('Set-Cookie', morsel.output(header='').lstrip())
                 self.send_header('Content-type', content_type)
                 self.end_headers()
@@ -294,16 +294,16 @@ class WUIHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     func.__self__.session = sess
                     template, ret = eval("func" + "(" + s_vars + ")")
                     code = 200
-            except HTTP_REDIRECTION, url:
+            except HTTP_REDIRECTION as url:
                 self.send_response(302)
-                for morsel in self.cookie.values():
+                for morsel in list(self.cookie.values()):
                     self.send_header('Set-Cookie', morsel.output(header='').lstrip())
                 self.send_header('Location', url)
                 self.end_headers()
                 self.wfile.write("")
                 return
 
-            except Exception, e:
+            except Exception as e:
                 #No controller
                 _exception = sys.exc_info()
                 if _exception[0]:
@@ -327,13 +327,13 @@ class WUIHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     t = pyratemp.Template(filename=self.server.owner.spade_path + os.sep + "templates" + os.sep + template, data=ret)
                     #print template, ret
                     #os.chdir(olddir)
-            except pyratemp.TemplateSyntaxError, e:
+            except pyratemp.TemplateSyntaxError as e:
                 _exception = sys.exc_info()
                 if _exception[0]:
                     _err = ''.join(traceback.format_exception(_exception[0], _exception[1], _exception[2])).rstrip()
                 t = pyratemp.Template(filename=self.server.owner.spade_path + os.sep + "templates" + os.sep + "501.pyra", data={"template": template, "error": str(_err), "name": self.server.owner.owner.getName(), "authenticated":authenticated})
                 code = 501
-            except Exception, e:
+            except Exception as e:
                 #No template
                 _exception = sys.exc_info()
                 if _exception[0]:
@@ -343,7 +343,7 @@ class WUIHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 code = 503
             try:
                 result = t()
-            except Exception, e:
+            except Exception as e:
                 #Error in template
                 _exception = sys.exc_info()
                 if _exception[0]:
@@ -355,7 +355,7 @@ class WUIHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             r = result.encode("ascii", 'xmlcharrefreplace')
 
             self.send_response(code)
-            for morsel in self.cookie.values():
+            for morsel in list(self.cookie.values()):
                 self.send_header('Set-Cookie', morsel.output(header='').lstrip())
             self.end_headers()
             self.wfile.write(r)

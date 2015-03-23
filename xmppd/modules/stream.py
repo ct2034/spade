@@ -11,7 +11,7 @@ try:
 except:
     from xmppd import *
 import socket
-import thread
+import _thread
 from tlslite.api import *
 import hashlib
 
@@ -418,7 +418,7 @@ class Handshake(PlugIn):
             return
 
         handshake = str(stanza.getData())
-        for k, v in self.server.components.items():
+        for k, v in list(self.server.components.items()):
             try:
                 truehs = hashlib.sha1(str(session.ID) + v['password']).hexdigest()
                 if handshake == truehs:

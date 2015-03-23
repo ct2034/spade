@@ -60,7 +60,7 @@ class xmppdXMLHandler(ContentHandler):
         if self.section == "components":
             try:
                 d = dict()
-                for k, v in attrs.items():
+                for k, v in list(attrs.items()):
                     d[str(k)] = str(v)  # De-unicodize
                 components[name.lower()] = d
             except:
@@ -68,7 +68,7 @@ class xmppdXMLHandler(ContentHandler):
         elif self.section == "plugins":  # Server plugins
             try:
                 d = dict()
-                for k, v in attrs.items():
+                for k, v in list(attrs.items()):
                     d[str(k)] = str(v)  # De-unicodize
                 plugins[name] = d
             except:
@@ -177,7 +177,7 @@ class Config(PlugIn):
             server.administrators.update({name: []})
             #for admin in configfile.get(name,'admins').split(','):
 
-        for name, v in administrators.items():
+        for name, v in list(administrators.items()):
             for admin in v:
                 server.administrators[name].append(admin.strip())
                 server.DEBUG('server', 'Added new admin (%s) for server (%s) from config!' % (admin.strip(), name), 'info')

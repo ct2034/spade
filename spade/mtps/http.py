@@ -8,14 +8,14 @@ for HTTP" standard.
 www.fipa.org
 """
 
-import BaseHTTPServer
-import SocketServer
+import http.server
+import socketserver
 import threading
 from spade import MTP
 from spade import XMLCodec
 from spade import ACLParser
 from spade import ACLMessage, Envelope, AID
-import httplib
+import http.client
 
 #Specific constants
 PORT = 2099
@@ -94,8 +94,8 @@ class http(MTP.MTP):
     def stop(self):
         try:
             self.httpserver.shutdown()
-        except Exception, e:
-            print "EXCEPTION STOPPING HTTP", str(e)
+        except Exception as e:
+            print("EXCEPTION STOPPING HTTP", str(e))
 
     def send(self, envelope, payload):
         """
@@ -137,7 +137,7 @@ class http(MTP.MTP):
                     # HTTP connection
                     #host = ad.split("/acc")[0]
                     host, remote_path = ad.split("/")
-                    conn = httplib.HTTPConnection(host)
+                    conn = http.client.HTTPConnection(host)
 
                     self.fipaHeadersPost['Host'] = host
 
@@ -146,10 +146,10 @@ class http(MTP.MTP):
                     response = conn.getresponse()
 
                     if response.status != 200:
-                        print "Conection Error: Bad response", str(response.status)
+                        print("Conection Error: Bad response", str(response.status))
 
                     if response.reason != "OK":
-                        print "Conection Error: Bad reason", str(response.reason)
+                        print("Conection Error: Bad reason", str(response.reason))
 
                     conn.close()
 
@@ -157,16 +157,16 @@ class http(MTP.MTP):
                     # HTTP Connection closed
 
 
-class ForkingHTTPServer(SocketServer.ForkingMixIn, BaseHTTPServer.HTTPServer):
+class ForkingHTTPServer(socketserver.ForkingMixIn, http.server.HTTPServer):
     def finish_request(self, request, client_address):
         request.settimeout(1)
         # "super" can not be used because BaseServer is not created from object
-        BaseHTTPServer.HTTPServer.finish_request(self, request, client_address)
+        http.server.HTTPServer.finish_request(self, request, client_address)
 
 class HttpServer(threading.Thread):
     def run(self):
-        BaseHTTPServer.HTTPServer.allow_reuse_address = True
-        BaseHTTPServer.HTTPServer.timeout = 1
+        http.server.HTTPServer.allow_reuse_address = True
+        http.server.HTTPServer.timeout = 1
         self.httpd = ForkingHTTPServer(("", PORT), Handler)
         #BaseHTTPServer.HTTPServer(("", PORT), Handler)
         self.httpd.mtp = self.mtp
@@ -176,7 +176,7 @@ class HttpServer(threading.Thread):
         self.httpd.shutdown()
 
 
-class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
+class Handler(http.server.BaseHTTPRequestHandler):
     protocol_version = PROTOCOL_VERSION
 
     def log_message(format, *args):
@@ -203,11 +203,11 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_error(505)
 
         new_headers = {}
-        for k in self.headers.keys():
+        for k in list(self.headers.keys()):
             new_headers[k.lower()] = self.headers[k]
 
-        for i in FIPA_HP.keys():
-            if i.lower() not in new_headers.keys():
+        for i in list(FIPA_HP.keys()):
+            if i.lower() not in list(new_headers.keys()):
                 self.send_error(400, "FIPA headers required (www.fipa.org)")
                 break
 
@@ -240,7 +240,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             # Response
             self.send_response(200)
 
-        for header in FIPA_HR.keys():
+        for header in list(FIPA_HR.keys()):
             self.send_header(header, FIPA_HR[header])
             self.end_headers()
 

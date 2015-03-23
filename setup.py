@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import os
 import sys
-import subprocess
 #from distutils.core import setup, Extension
 from setuptools import setup, Extension
 import glob
@@ -26,12 +25,6 @@ else:
 
 with open('README') as file:
     long_description = file.read()
-
-deps = [
-    "SPARQLWrapper",
-    "unittest-xml-reporting"]
-if subprocess.mswindows:
-	deps.append( 'pywin32' )
 
 setup(name='SPADE',
     version=__version__,
@@ -59,7 +52,11 @@ setup(name='SPADE',
     'Topic :: Adaptive Technologies',
     'Topic :: Scientific/Engineering :: Artificial Intelligence',
     ],
-    install_requires = deps
+    install_requires = [
+    "pexpect",
+    "SPARQLWrapper",
+    "unittest-xml-reporting",
+    ],
     )
     
     

@@ -6,20 +6,20 @@ import signal
 import sys
 import traceback
 import time
-import thread
+import _thread
 from os.path import *
 
 from getopt import getopt
 try:
     from spade import spade_backend
     from spade import colors
-except ImportError, e:
-    print "Could not import spade package!!! " + str(e)
+except ImportError as e:
+    print(("Could not import spade package!!! " + str(e)))
 
 from xmppd.xmppd import Server
 
 __author__ = "Gustavo Aranda <gusarba@gmail.com> and Javier Palanca <jpalanca@gmail.com>"
-__version__ = "2.2"
+__version__ = "2.2.1"
 __copyright__ = "Copyright (C) 2006-2012"
 __license__ = "LGPL"
 
@@ -30,20 +30,20 @@ def print_help():
     if sys.platform[:6] == 'netbsd':
         configfilename = os.sep + "usr" + os.sep + "pkg" + configfilename
         jabberxml = os.sep + "usr" + os.sep + "pkg" + jabberxml
-    print
-    print "Usage: %s [options]" % sys.argv[0]
-    print " -h, --help         display this help text and exit"
-    print " -v, --version      display the version and exit"
-    print " -d, --debug        enable the debug execution"
-    print " -c, --configfile   load the configuration file (use configure.py to create one)"
-    print " -j, --jabber       load the jabber configuration file (use configure.py to create one)"
+    print()
+    print(("Usage: %s [options]" % sys.argv[0]))
+    print(" -h, --help         display this help text and exit")
+    print(" -v, --version      display the version and exit")
+    print(" -d, --debug        enable the debug execution")
+    print(" -c, --configfile   load the configuration file (use configure.py to create one)")
+    print(" -j, --jabber       load the jabber configuration file (use configure.py to create one)")
     #print " -w, --web          load the web interface"
     raise SystemExit
 
 
 def print_version():
-    print "SPADE " + colors.color_yellow + __version__ + colors.color_none + " by Javier Palanca, Gustavo Aranda, Miguel Escriva and others"
-    print "gusarba@gmail.com - http://spade2.googlecode.com"
+    print(("SPADE " + colors.color_yellow + __version__ + colors.color_none + " by Javier Palanca, Gustavo Aranda, Miguel Escriva and others"))
+    print("gusarba@gmail.com - http://spade2.googlecode.com")
     raise SystemExit
 
 # Actually start the program running.
@@ -90,7 +90,7 @@ def main():
     except:
         pass
 
-    print "SPADE ", colors.color_yellow + __version__ + colors.color_none, " <gusarba@gmail.com> - http://spade2.googlecode.com"
+    print(("SPADE ", colors.color_yellow + __version__ + colors.color_none, " <gusarba@gmail.com> - http://spade2.googlecode.com"))
 
     try:
         import psyco
@@ -106,7 +106,7 @@ def main():
 
     jabberxml = os.path.abspath(jabberxml)
     if not os.path.exists(jabberxml):
-        print '\n There is no jabber config file (xmppd.xml)' + colors.color_red + " [failed]" + colors.color_none
+        print(('\n There is no jabber config file (xmppd.xml)' + colors.color_red + " [failed]" + colors.color_none))
         print_help()
         raise SystemExit
 
@@ -122,43 +122,43 @@ def main():
     sys.stdout.write(".")
     sys.stdout.flush()
 
-    thread.start_new_thread(s.run, tuple())
+    _thread.start_new_thread(s.run, tuple())
 
     try:
         sys.stdout.write(".")
         sys.stdout.flush()
         if not os.path.exists(configfilename):
-            print '\n There is no SPADE config file (spade.xml)' + colors.color_red + " [failed]" + colors.color_none
+            print(('\n There is no SPADE config file (spade.xml)' + colors.color_red + " [failed]" + colors.color_none))
             print_help()
             raise SystemExit
 
-	if dbg==['always']:
+        if dbg==['always']:
             platform = spade_backend.SpadeBackend(s, configfilename, debug=True)
-	else:
+        else:
             platform = spade_backend.SpadeBackend(s, configfilename)
-        sys.stdout.write(".")
-        sys.stdout.flush()
-        platform.start()
-        sys.stdout.write(".")
-        sys.stdout.flush()
-        s.DEBUG = platform.DEBUG
+            sys.stdout.write(".")
+            sys.stdout.flush()
+            platform.start()
+            sys.stdout.write(".")
+            sys.stdout.flush()
+            s.DEBUG = platform.DEBUG
 
-        sys.stdout.write(".")
-        sys.stdout.flush()
+            sys.stdout.write(".")
+            sys.stdout.flush()
 
-    except Exception, e:
+    except Exception as e:
         _exception = sys.exc_info()
         if _exception[0]:
-            print '\n' + ''.join(traceback.format_exception(_exception[0], _exception[1], _exception[2])).rstrip()
-            print str(e)
-            print colors.color_red + " [failed]" + colors.color_none
+            print(('\n' + ''.join(traceback.format_exception(_exception[0], _exception[1], _exception[2])).rstrip()))
+            print((str(e)))
+            print((colors.color_red + " [failed]" + colors.color_none))
             platform.shutdown()
             s.shutdown("Jabber server terminated...")
             raise SystemExit
 
-    print colors.color_green + " [done]" + colors.color_none
+    print((colors.color_green + " [done]" + colors.color_none))
     if platform.acc.wui:
-        print "\n " + colors.color_yellow + " [info] " + colors.color_none + "WebUserInterface serving at port " + str(platform.acc.wui.port) + "\n "
+        print(("\n " + colors.color_yellow + " [info] " + colors.color_none + "WebUserInterface serving at port " + str(platform.acc.wui.port) + "\n "))
 
     alive = True
     while alive:
@@ -167,9 +167,9 @@ def main():
             if not platform.alive:
                 #The platform died (probable restart). Let's start it over
                 platform.shutdown()
-                print "\n " + colors.color_green + "SPADE Platform restarting..." + colors.color_none
+                print(("\n " + colors.color_green + "SPADE Platform restarting..." + colors.color_none))
                 platform.start()
-                print colors.color_green + " [done]" + colors.color_none
+                print((colors.color_green + " [done]" + colors.color_none))
         except KeyboardInterrupt:
             alive = False
 
@@ -185,7 +185,7 @@ def main():
     del s
     sys.stdout.write(".")
     sys.stdout.flush()
-    print colors.color_green + " Bye." + colors.color_none
+    print((colors.color_green + " Bye." + colors.color_none))
     #raise SystemExit
     sys.exit(0)
 

@@ -165,7 +165,7 @@ class Spawner(subprocess.Popen):
 				(errCode, written) = WriteFile(x, input)
 			except ValueError:
 				return self._close('stdin')
-			except (subprocess.pywintypes.error, Exception), why:
+			except (subprocess.pywintypes.error, Exception) as why:
 				if why[0] in (109, errno.ESHUTDOWN):
 					return self._close('stdin')
 				raise
@@ -190,7 +190,7 @@ class Spawner(subprocess.Popen):
 					(errCode, read) = ReadFile(x, nAvail, None)
 			except ValueError:
 				return self._close(which)
-			except (subprocess.pywintypes.error, Exception), why:
+			except (subprocess.pywintypes.error, Exception) as why:
 				if why[0] in (109, errno.ESHUTDOWN):
 					return self._close(which)
 				raise
@@ -215,7 +215,7 @@ class Spawner(subprocess.Popen):
 
 			try:
 				written = os.write(self.stdin.fileno(), input)
-			except OSError, why:
+			except OSError as why:
 				if why[0] == errno.EPIPE: #broken pipe
 					return self._close('stdin')
 				raise
@@ -647,18 +647,14 @@ class flora2:
 		except:
 			raise Flora2ExecutableNotFound('Flora-2 executable not found on the specified path. Try using flora2( "/path/to/flora2/runflora" )')
 
-	def load(self, module, into=None):
+	def load(self, module):
 		'''Loads module into self.engine
 		Usage: instance.load( path )
 		path - path to module file
-		into - load into module
 
 		Raises: Flora2CompileError'''
-		if into:
-			self.engine.sendline("['" + module + "'>>'" + into + "'].")
-		else:
-			self.engine.sendline("['" + module + "'].")
-		res = self.engine.get(t=.5)
+		self.engine.sendline("['" + module + "'].")
+		res = self.engine.get(t=.2)
 		if flora2error.findall(res) != []:
 			raise Flora2CompileError('Error while compiling module "' + module + '". Error from Flora2:\n' + res)
 
@@ -683,7 +679,7 @@ class flora2:
 		lvars = list(set(lvars))
 		if lvars == []:  # yes/no query (no variables)
 			self.engine.sendline(query)
-			res = self.engine.get(t=.2, tr=10)
+			res = self.engine.get(t=.2)
 			if flora2error.findall(res) != []:
 				raise Flora2QueryError('Error while executing query "' + query + '". Error from Flora2:\n' + res)
 			else:
@@ -693,7 +689,7 @@ class flora2:
 					return False
 		else:  # normal query
 			self.engine.sendline(query)
-			res = self.engine.get(t=.2, tr=10)
+			res = self.engine.get(t=.2)
 			if flora2error.findall(res) != []:
 				raise Flora2QueryError('Error while executing query "' + query + '". Error from Flora2:\n' + res)
 			else:
@@ -724,31 +720,31 @@ if __name__ == '__main__':
 	
 	x = xsb()
 	x.load('../test/logic/test_xsb')
-	print x.query('dislikes( john, mushrooms )')
-	print x.query('likes( Person, Food )')
+	print(x.query('dislikes( john, mushrooms )'))
+	print(x.query('likes( Person, Food )'))
 	del x
 
-	print "======="
+	print("=======")
 
 	s = swipl()
 	s.load('../test/logic/test_swi')
-	print s.query('dislikes( john, mushrooms )')
-	print s.query('likes( Person, Food )')
+	print(s.query('dislikes( john, mushrooms )'))
+	print(s.query('likes( Person, Food )'))
 	#print s.query('?Bla(bla)')
 	del s
 
-	print "======="
+	print("=======")
 	
 	e = eclipse()
 	e.load('../test/logic/test_eclipse')
-	print e.query('dislikes( john, mushrooms )')
-	print e.query('likes( Person, Food )')
+	print(e.query('dislikes( john, mushrooms )'))
+	print(e.query('likes( Person, Food )'))
 	del e
 
-	print "======="
+	print("=======")
 	
 	f = flora2()
 	f.load('../test/logic/test_flora')
-	print f.query('john[ dislikes->mushrooms ]')
-	print f.query('?person[ likes->?food ]')
+	print(f.query('john[ dislikes->mushrooms ]'))
+	print(f.query('?person[ likes->?food ]'))
 	del f

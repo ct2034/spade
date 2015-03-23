@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import time
-import ACLMessage
-import AID
-import MessageReceiver
+from . import ACLMessage
+from . import AID
+from . import MessageReceiver
 import threading
 import types
 import copy
@@ -76,7 +76,7 @@ class ACLTemplate(BehaviourTemplate):
 
     def __str__(self):
         d = {"performative": self.performative, "sender": str(self.sender), "receivers": str(self.receivers), "reply_to": self.reply_to, "content": self.content, "reply_with": self.reply_with, "reply_by": self.reply_by, "in_reply_to": self.in_reply_to, "encoding": self.encoding, "language": self.language, "ontology": self.ontology, "protocol": self.protocol, "conversation_id": self.conversation_id}
-        return str(dict((data for data in d.iteritems() if data[1])))
+        return str(dict((data for data in d.items() if data[1])))
 
     def loadJSON(self, jsonstring):
         """
@@ -362,9 +362,9 @@ class MessageTemplate(BehaviourTemplate):
                 if self.template.name != other.name:
                     return False
             if self.template.attrs is not None and self.template.attrs != {}:
-                for i, j in self.template.attrs.items():
+                for i, j in list(self.template.attrs.items()):
                     if not self.regex:
-                        if (i not in other.attrs.keys()) or (str(j) != str(other.attrs[i])):
+                        if (i not in list(other.attrs.keys())) or (str(j) != str(other.attrs[i])):
                             return False
                     if not re.match(str(j), str(other.attrs[i])):
                         return False
@@ -552,7 +552,7 @@ class Behaviour(MessageReceiver.MessageReceiver):
         try:
             while (not self.done()) and (not self._forceKill.isSet()):
                 self._exitcode = self._process()
-        except Exception, e:
+        except Exception as e:
             self.myAgent.DEBUG("Exception in Behaviour " + str(self) + ": " + str(e), "err")
         self.onEnd()
         #if issubclass(self.__class__, EventBehaviour):
@@ -707,7 +707,7 @@ class FSMBehaviour(Behaviour):
         registers a state with a behavior
         """
         if not issubclass(behaviour.__class__, OneShotBehaviour):
-            print "WARNING! Registering not-OneShot as FSM state"
+            print("WARNING! Registering not-OneShot as FSM state")
         behaviour.setParent(self)
         self._states[name] = behaviour
         self._transitions[name] = dict()
@@ -812,7 +812,7 @@ if __name__ == "__main__":
             PeriodicBehaviour.__init__(self, time)
 
         def _onTick(self):
-            print "Tick: " + str(time.time())
+            print("Tick: " + str(time.time()))
 
     a = TestBehaviour(5)
     a.start()

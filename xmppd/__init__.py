@@ -1,1 +1,1 @@
-import xmppd
+from . import xmppd

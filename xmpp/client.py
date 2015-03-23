@@ -23,6 +23,7 @@ These classes can be used for simple applications "AS IS" though.
 
 import socket
 import debug
+
 Debug=debug
 Debug.DEBUGGING_IS_ON=1
 Debug.Debug.colors['socket']=debug.color_dark_gray
@@ -62,15 +63,15 @@ class PlugIn:
         if self.DBG_LINE not in owner.debug_flags:
             owner.debug_flags.append(self.DBG_LINE)
         self.DEBUG('Plugging %s into %s'%(self,self._owner),'start')
-        if owner.__dict__.has_key(self.__class__.__name__):
+        if self.__class__.__name__ in owner.__dict__:
             return self.DEBUG('Plugging ignored: another instance already plugged.','error')
         self._old_owners_methods=[]
         for method in self._exported_methods:
-            if owner.__dict__.has_key(method.__name__):
+            if method.__name__ in owner.__dict__:
                 self._old_owners_methods.append(owner.__dict__[method.__name__])
             owner.__dict__[method.__name__]=method
         owner.__dict__[self.__class__.__name__]=self
-        if self.__class__.__dict__.has_key('plugin'): return self.plugin(owner)
+        if 'plugin' in self.__class__.__dict__: return self.plugin(owner)
 
     def PlugOut(self):
         """ Unregister all our staff from main instance and detach from it. """
@@ -82,13 +83,13 @@ class PlugIn:
             except: pass
         for method in self._old_owners_methods: self._owner.__dict__[method.__name__]=method
         del self._owner.__dict__[self.__class__.__name__]
-        if self.__class__.__dict__.has_key('plugout'): return self.plugout()
+        if 'plugout' in self.__class__.__dict__: return self.plugout()
 
     def DEBUG(self,text,severity='info'):
         """ Feed a provided debug line to main instance's debug facility along with our ID string. """
         self._owner.DEBUG(self.DBG_LINE,text,severity)
 
-import transports,dispatcher,auth,roster
+from . import transports,dispatcher,auth,roster
 class CommonClient:
     """ Base for Client and Component classes."""
     def __init__(self,server,port=5222,debug=['always', 'nodebuilder']):
@@ -103,7 +104,7 @@ class CommonClient:
         self.disconnect_handlers=[]
         self.Server=server
         self.Port=port
-        if debug and type(debug)<>list: debug=['always', 'nodebuilder']
+        if debug and type(debug)!=list: debug=['always', 'nodebuilder']
         self._DEBUG=Debug.Debug(debug)
         self.DEBUG=self._DEBUG.Show
         self.debug_flags=self._DEBUG.debug_flags
@@ -129,7 +130,7 @@ class CommonClient:
         self.disconnect_handlers.reverse()
         for i in self.disconnect_handlers: i()
         self.disconnect_handlers.reverse()
-        if self.__dict__.has_key('TLS'): self.TLS.PlugOut()
+        if 'TLS' in self.__dict__: self.TLS.PlugOut()
 
     def DisconnectHandler(self):
         """ Default disconnect handler. Just raises an IOError.
@@ -139,7 +140,7 @@ class CommonClient:
 
     def event(self,eventName,args={}):
         """ Default event handler. To be overriden. """
-        print "Event: ",(eventName,args)
+        print("Event: ",(eventName,args))
 
     def isConnected(self):
         """ Returns connection state. F.e.: None / 'tls' / 'tcp+non_sasl' . """
@@ -148,11 +149,11 @@ class CommonClient:
     def reconnectAndReauth(self):
         """ Example of reconnection method. In fact, it can be used to batch connection and auth as well. """
         handlerssave=self.Dispatcher.dumpHandlers()
-        if self.__dict__.has_key('NonSASL'): self.NonSASL.PlugOut()
-        if self.__dict__.has_key('SASL'): self.SASL.PlugOut()
-        if self.__dict__.has_key('TLS'): self.TLS.PlugOut()
-        if self.__dict__.has_key('HTTPPROXYsocket'): self.HTTPPROXYsocket.PlugOut()
-        if self.__dict__.has_key('TCPsocket'): self.TCPsocket.PlugOut()
+        if 'NonSASL' in self.__dict__: self.NonSASL.PlugOut()
+        if 'SASL' in self.__dict__: self.SASL.PlugOut()
+        if 'TLS' in self.__dict__: self.TLS.PlugOut()
+        if 'HTTPPROXYsocket' in self.__dict__: self.HTTPPROXYsocket.PlugOut()
+        if 'TCPsocket' in self.__dict__: self.TCPsocket.PlugOut()
         self.Dispatcher.PlugOut()
 
         if not self.connect(server=self._Server,proxy=self._Proxy): return
@@ -181,7 +182,7 @@ class CommonClient:
         dispatcher.Dispatcher().PlugIn(self)
         while self.Dispatcher.Stream._document_attrs is None:
             if not self.Process(1): return
-        if self.Dispatcher.Stream._document_attrs.has_key('version') and self.Dispatcher.Stream._document_attrs['version']=='1.0':
+        if 'version' in self.Dispatcher.Stream._document_attrs and self.Dispatcher.Stream._document_attrs['version']=='1.0':
             while not self.Dispatcher.Stream.features and self.Process(1): pass      # If we get version 1.0 stream the features tag MUST BE presented
         return self.connected
 
@@ -197,9 +198,9 @@ class Client(CommonClient):
             If you want to disable tls/ssl support completely, set it to 0.
             Example: connect(('192.168.5.5',5222),{'host':'proxy.my.net','port':8080,'user':'me','password':'secret'})
             Returns '' or 'tcp' or 'tls', depending on the result."""
-        if not CommonClient.connect(self,server,proxy,secure,use_srv) or secure<>None and not secure: return self.connected
+        if not CommonClient.connect(self,server,proxy,secure,use_srv) or secure!=None and not secure: return self.connected
         transports.TLS().PlugIn(self)
-        if not self.Dispatcher.Stream._document_attrs.has_key('version') or not self.Dispatcher.Stream._document_attrs['version']=='1.0': return self.connected
+        if 'version' not in self.Dispatcher.Stream._document_attrs or not self.Dispatcher.Stream._document_attrs['version']=='1.0': return self.connected
         while not self.Dispatcher.Stream.features and self.Process(1): pass      # If we get version 1.0 stream the features tag MUST BE presented
         if not self.Dispatcher.Stream.features.getTag('starttls'): return self.connected       # TLS not supported by server
         while not self.TLS.starttls and self.Process(1): pass
@@ -212,7 +213,7 @@ class Client(CommonClient):
             random one or library name used. """
         self._User,self._Password,self._Resource=user,password,resource
         while not self.Dispatcher.Stream._document_attrs and self.Process(1): pass
-        if self.Dispatcher.Stream._document_attrs.has_key('version') and self.Dispatcher.Stream._document_attrs['version']=='1.0':
+        if 'version' in self.Dispatcher.Stream._document_attrs and self.Dispatcher.Stream._document_attrs['version']=='1.0':
             while not self.Dispatcher.Stream.features and self.Process(1): pass      # If we get version 1.0 stream the features tag MUST BE presented
         if sasl: auth.SASL(user,password).PlugIn(self)
         if not sasl or self.SASL.startsasl=='not-supported':
@@ -233,7 +234,7 @@ class Client(CommonClient):
     def getRoster(self):
         """ Return the Roster instance, previously plugging it in and
             requesting roster from server if needed. """
-        if not self.__dict__.has_key('Roster'): roster.Roster().PlugIn(self)
+        if 'Roster' not in self.__dict__: roster.Roster().PlugIn(self)
         return self.Roster.getRoster()
 
     def sendInitPresence(self,requestRoster=1):

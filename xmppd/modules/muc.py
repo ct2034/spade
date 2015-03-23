@@ -478,19 +478,19 @@ class Room:
         if val in [0, '0', False]:
             self.config["muc#roomconfig_moderatedroom"] = 0
             for j in self.visitors + self.moderators:
-                for k in self.participants.keys():
+                for k in list(self.participants.keys()):
                     if j in k:
                         self.participants[k].setRole('participant')
                         try:
                             self.visitors.remove(j)
                         except:
                             self.moderators.remove(j)
-                for k, to in self.participants.items():
+                for k, to in list(self.participants.items()):
                     #service informs remaining occupants
                     x = Node('x', {'xmlns': 'http://jabber.org/protocol/muc#user'})
                     relative_frm = self.fullJID() + '/' + to.getNick()
                     newitem = Node('item', {'affiliation': to.getAffiliation(), 'role': to.getRole(), 'nick': to.getNick()})
-                    for other in self.participants.values():
+                    for other in list(self.participants.values()):
                         if self.getWhois() == "anyone" \
                                 or self.getWhois() == "moderators" and to.getRole() == "moderator":
                             newitem.setAttr('jid', other.getFullJID())
@@ -505,7 +505,7 @@ class Room:
         else:
             self.DEBUG("Room %s set to be Moderated" % (self.getName()), "info")
             self.config["muc#roomconfig_moderatedroom"] = 1
-            for k, to in self.participants.items():
+            for k, to in list(self.participants.items()):
                 self.DEBUG("Checking %s with affiliation %s" % (to.getNick(), to.getAffiliation()))
                 if to.getAffiliation() in ['admin', 'owner']:
                     to.setRole("moderator")
@@ -523,7 +523,7 @@ class Room:
                     x = Node('x', {'xmlns': 'http://jabber.org/protocol/muc#user'})
                     relative_frm = self.fullJID() + '/' + to.getNick()
                     newitem = Node('item', {'affiliation': to.getAffiliation(), 'role': to.getRole(), 'nick': to.getNick()})
-                    for other in self.participants.values():
+                    for other in list(self.participants.values()):
                         if self.getWhois() == "anyone" \
                                 or self.getWhois() == "moderators" and to.getRole() == "moderator":
                             newitem.setAttr('jid', other.getFullJID())
@@ -596,7 +596,7 @@ class Room:
             """
             self.DEBUG("Room set to be Members Only", "info")
             # Kick all non-members, non-owners and non-admins out of the room
-            for k, to in self.participants.items():
+            for k, to in list(self.participants.items()):
                 if to.getBareJID() not in self.whitelist \
                         and to.getAffiliation() in ['outcast', 'none']:
 
@@ -628,7 +628,7 @@ class Room:
                     x = Node('x', {'xmlns': 'http://jabber.org/protocol/muc#user'})
                     status = Node('status', {'code': '307'})
                     x.addChild(node=status)
-                    for other in self.participants.values():
+                    for other in list(self.participants.values()):
                         item = Node('item', {'affiliation': to.getAffiliation(), 'role': to.getRole()})
                         if self.getWhois() != "" and other.getRole() == "moderator":
                             item.setAttr('jid', to.getFullJID())
@@ -702,7 +702,7 @@ class Room:
         barejid = JID(name).getStripped()
         self.reserveNick(barejid, None)  # Pre-reserve nick
 
-        for k, v in self.participants.items():
+        for k, v in list(self.participants.items()):
             if barejid in k:
                 # Set this participant (k,v) to admin
                 self.DEBUG("Granting admin privileges to " + k, "info")
@@ -724,7 +724,7 @@ class Room:
 
         #service informs remaining occupants
         #if jid in self.participants.keys():
-        for p in self.participants.values():
+        for p in list(self.participants.values()):
             if p.getBareJID() == barejid:
                 nick = p.getNick()
                 relative_frm = self.fullJID() + '/' + nick
@@ -738,7 +738,7 @@ class Room:
                     newitem.setAttr('jid', barejid)
                 x.addChild(node=newitem)
 
-                for other in self.participants.values():
+                for other in list(self.participants.values()):
                     reply = Presence(other.getFullJID(), frm=relative_frm)
                     reply.addChild(node=x)
                     s = self.muc.server.getsession(other.getFullJID())
@@ -756,7 +756,7 @@ class Room:
             return
         barejid = JID(name).getStripped()
 
-        for k, v in self.participants.items():
+        for k, v in list(self.participants.items()):
             if barejid in k:
                     # Set this participant (k,v) to member
                 self.DEBUG("Removing admin privileges to " + k, "info")
@@ -781,7 +781,7 @@ class Room:
                 break
 
         #service informs remaining occupants
-        for p in self.participants.values():
+        for p in list(self.participants.values()):
             if p.getBareJID() == barejid:
                 nick = p.getNick()
                 relative_frm = self.fullJID() + '/' + nick
@@ -795,7 +795,7 @@ class Room:
                     newitem.setAttr('jid', barejid)
                 x.addChild(node=newitem)
 
-                for other in self.participants.values():
+                for other in list(self.participants.values()):
                     reply = Presence(other.getFullJID(), frm=relative_frm)
                     reply.addChild(node=x)
                     s = self.muc.server.getsession(other.getFullJID())
@@ -820,7 +820,7 @@ class Room:
         barejid = JID(name).getStripped()
         self.reserveNick(barejid, None)  # Pre-reserve nick
 
-        for k, v in self.participants.items():
+        for k, v in list(self.participants.items()):
             if barejid in k:
                     # Set this participant (k,v) to admin
                 self.DEBUG("Granting owner privileges to " + k, "info")
@@ -843,7 +843,7 @@ class Room:
 
         #service informs remaining occupants
         #if jid in self.participants.keys():
-        for p in self.participants.values():
+        for p in list(self.participants.values()):
             if p.getBareJID() == barejid:
                 nick = p.getNick()
                 relative_frm = self.fullJID() + '/' + nick
@@ -857,7 +857,7 @@ class Room:
                     newitem.setAttr('jid', barejid)
                 x.addChild(node=newitem)
 
-                for other in self.participants.values():
+                for other in list(self.participants.values()):
                     reply = Presence(other.getFullJID(), frm=relative_frm)
                     reply.addChild(node=x)
                     s = self.muc.server.getsession(other.getFullJID())
@@ -875,7 +875,7 @@ class Room:
             return
         barejid = JID(name).getStripped()
 
-        for k, v in self.participants.items():
+        for k, v in list(self.participants.items()):
             if barejid in k:
                     # Set this participant (k,v) to member
                 self.DEBUG("Removing owner privileges to " + k, "info")
@@ -899,7 +899,7 @@ class Room:
                 break
 
         #service informs remaining occupants
-        for p in self.participants.values():
+        for p in list(self.participants.values()):
             if p.getBareJID() == barejid:
                 nick = p.getNick()
                 relative_frm = self.fullJID() + '/' + nick
@@ -913,7 +913,7 @@ class Room:
                     newitem.setAttr('jid', barejid)
                 x.addChild(node=newitem)
 
-                for other in self.participants.values():
+                for other in list(self.participants.values()):
                     reply = Presence(other.getFullJID(), frm=relative_frm)
                     reply.addChild(node=x)
                     s = self.muc.server.getsession(other.getFullJID())
@@ -943,7 +943,7 @@ class Room:
         s = ""
         s = str(self.name) + ": " + self.subject
         s = s + "\nLocked = " + str(self.locked)
-        s = s + "\nParticipants = " + str(self.participants.keys())
+        s = s + "\nParticipants = " + str(list(self.participants.keys()))
         if self.creator:
             s = s + "\nCreator = " + str(self.creator.getFullJID())
         s = s + "\nWhitelist = " + str(self.whitelist)
@@ -951,7 +951,7 @@ class Room:
         s = s + "\nModerators = " + str(self.moderators)
         s = s + "\nVisitors = " + str(self.visitors)
         s = s + "\nReserved Nicks = " + str(self.reserved_nicks) + "\n"
-        for k in self.config.keys():
+        for k in list(self.config.keys()):
             s = s + str(k) + ": " + str(self.config[k]) + "\n"
         return s
 
@@ -1029,7 +1029,7 @@ class Room:
                         try:
                             relative_frm = self.fullJID() + '/' + p.getNick()
                             stanza.setFrom(relative_frm)
-                            for participant in self.participants.values():
+                            for participant in list(self.participants.values()):
                                 stanza.setTo(participant.getFullJID())
                                 s = self.muc.server.getsession(participant.getFullJID())
                                 s.enqueue(stanza)
@@ -1059,20 +1059,20 @@ class Room:
                         # Change the 'from'
                         messenger = self.participants[frm]
                         stanza.setFrom(self.fullJID() + '/' + messenger.getNick())
-                        for participant in self.participants.values():
+                        for participant in list(self.participants.values()):
                             stanza.setTo(participant.getFullJID())
                             s = self.muc.server.getsession(participant.getFullJID())
                             if s:
                                 s.enqueue(stanza)
 
                         # Special bot-like commands
-                        if stanza.getBody() == ".str" or stanza.getBody() == u".str":
-                            print self
-                        if stanza.getBody() == ".savedb" or stanza.getBody() == u".savedb":
+                        if stanza.getBody() == ".str" or stanza.getBody() == ".str":
+                            print(self)
+                        if stanza.getBody() == ".savedb" or stanza.getBody() == ".savedb":
                             self.muc.saveRoomDB()
-                        if stanza.getBody() == ".rooms" or stanza.getBody() == u".rooms":
-                            for k, v in self.muc.rooms.items():
-                                print k, str(v)
+                        if stanza.getBody() == ".rooms" or stanza.getBody() == ".rooms":
+                            for k, v in list(self.muc.rooms.items()):
+                                print(k, str(v))
                         return
 
                     except NoVoice:
@@ -1118,7 +1118,7 @@ class Room:
                 return
 
             try:
-                for k, v in self.participants.items():
+                for k, v in list(self.participants.items()):
                     if v.getNick() == nick:
                         self.DEBUG("Private message for nick " + nick)
                         stanza.setTo(k)
@@ -1274,7 +1274,7 @@ class Room:
                 return
             else:
                 # Check nick unicity
-                for k, p in self.participants.items():
+                for k, p in list(self.participants.items()):
                     if p.getNick() == nick and frm != k:
                         # OMG nick conflict!
                         self.DEBUG("Nickname conflict !!!", "warn")
@@ -1287,7 +1287,7 @@ class Room:
                         return
 
             # Check wether the nick is reserved
-            for j, n in self.reserved_nicks.items():
+            for j, n in list(self.reserved_nicks.items()):
                 if n and n == nick and j != JID(frm).getStripped():
                     # CONFLICT!
                     self.DEBUG("Nickname conflict", 'warn')
@@ -1316,7 +1316,7 @@ class Room:
                         reply.addChild(node=err)
                         session.enqueue(reply)
                         return
-                    for p in self.participants.values():
+                    for p in list(self.participants.values()):
                         if nick == p.getNick():
                             # Nickname conflict, report back to the changer
                             self.DEBUG("Nickname conflict", 'warn')
@@ -1338,7 +1338,7 @@ class Room:
                     x.addChild(node=item)
                     x.addChild(node=status)
                     pres.addChild(node=x)
-                    for participant in self.participants.values():
+                    for participant in list(self.participants.values()):
                         pres.setTo(participant.getFullJID())
                         s = self.muc.server.getsession(participant.getFullJID())
                         if s:
@@ -1359,7 +1359,7 @@ class Room:
                     #session.enqueue(reply)
 
                     # Send presence information from existing participants to the new participant
-                    for k, participant in self.participants.items():
+                    for k, participant in list(self.participants.items()):
                         relative_frm = self.fullJID() + '/' + participant.getNick()
                         reply = Presence(frm, frm=relative_frm)
                         x = Node('x', {'xmlns': 'http://jabber.org/protocol/muc#user'})
@@ -1379,7 +1379,7 @@ class Room:
                             for child in p.getChildren():
                                 reply.addChild(node=child)
                         except:
-                            print self.muc.server.data
+                            print(self.muc.server.data)
                         session.enqueue(reply)
 
                     # Send new participant's presence to all participants
@@ -1396,7 +1396,7 @@ class Room:
                         item.setAttr('jid', frm)
 
                     x.addChild(node=item)
-                    for participant in self.participants.values():
+                    for participant in list(self.participants.values()):
                         reply = Presence(participant.getFullJID(), frm=relative_frm)
                         reply.addChild(node=x)
                         for child in stanza.getChildren():
@@ -1470,7 +1470,7 @@ class Room:
                 session.enqueue(reply)
                 return
 
-            except Exception, e:
+            except Exception as e:
                 self.DEBUG("Access Check failed with unknowk exception: " + str(e), 'error')
 
             return
@@ -1487,7 +1487,7 @@ class Room:
                 x = Node('x', {'xmlns': 'http://jabber.org/protocol/muc#user'})
                 item = Node('item', {'affiliation': str(participant.getAffiliation()), 'role': str(participant.getRole())})
                 x.addChild(node=item)
-                for other in self.participants.values():
+                for other in list(self.participants.values()):
                     reply = Presence(other.getFullJID(), 'unavailable', frm=relative_frm)
                     reply.addChild(node=x)
                     if stanza.getTag('status'):
@@ -1498,7 +1498,7 @@ class Room:
                         s.enqueue(reply)
             self.deleteParticipant(frm)
             # Check if an empty room must be destroyed (if its temporary)
-            if len(self.participants.keys()) == 0:
+            if len(list(self.participants.keys())) == 0:
                 # Empty room
                 if not self.isPersistentRoom():
                     del self.muc.rooms[self.getName()]
@@ -1570,7 +1570,7 @@ class Room:
                         field = DataField(name="muc#roominfo_subject", value=self.getSubject())
                         field.setAttr('label', 'Subject')
                         df.addChild(node=field)
-                        field = DataField(name="muc#roominfo_occupants", value=str(len(self.participants.keys())))
+                        field = DataField(name="muc#roominfo_occupants", value=str(len(list(self.participants.keys()))))
                         field.setAttr('label', 'Number of occupants')
                         df.addChild(node=field)
                         field = DataField(name="muc#roominfo_maxusers", value=str(self.getMaxUsers()))
@@ -1631,7 +1631,7 @@ class Room:
                     if id:
                         reply.setAttr('id', id)
                     if self.isPublicRoom():
-                        for k, p in self.participants.items():
+                        for k, p in list(self.participants.items()):
                             item = Node('item', {'jid': self.fullJID() + "/" + p.getNick()})
                             rquery.addChild(node=item)
                     session.enqueue(reply)
@@ -1644,7 +1644,7 @@ class Room:
                         role = item.getAttr('role')
                         jid = item.getAttr('jid')
                         to = None
-                        for k, v in self.participants.items():
+                        for k, v in list(self.participants.items()):
                             if nick:
                                 if v.getNick() == nick:
                                     to = v
@@ -1735,7 +1735,7 @@ class Room:
                                     item.setAttr('jid', to.getFullJID())
                                 x.addChild(node=item)
 
-                                for other in self.participants.values():
+                                for other in list(self.participants.values()):
                                     reply = Presence(other.getFullJID(), 'unavailable', frm=relative_frm)
                                     reply.addChild(node=x)
                                     s = self.muc.server.getsession(other.getFullJID())
@@ -1790,7 +1790,7 @@ class Room:
                                     newitem.addChild(node=child)
                                 x.addChild(node=newitem)
 
-                                for other in self.participants.values():
+                                for other in list(self.participants.values()):
                                     reply = Presence(other.getFullJID(), frm=relative_frm)
                                     reply.addChild(node=x)
                                     s = self.muc.server.getsession(other.getFullJID())
@@ -1843,7 +1843,7 @@ class Room:
                                     newitem.addChild(node=child)
                                 x.addChild(node=newitem)
 
-                                for other in self.participants.values():
+                                for other in list(self.participants.values()):
                                     reply = Presence(other.getFullJID(), frm=relative_frm)
                                     reply.addChild(node=x)
                                     s = self.muc.server.getsession(other.getFullJID())
@@ -1892,7 +1892,7 @@ class Room:
                                 for child in item.getChildren():
                                     newitem.addChild(node=child)
                                 x.addChild(node=newitem)
-                                for other in self.participants.values():
+                                for other in list(self.participants.values()):
                                     reply = Presence(other.getFullJID(), frm=relative_frm)
                                     reply.addChild(node=x)
                                     s = self.muc.server.getsession(other.getFullJID())
@@ -1951,7 +1951,7 @@ class Room:
                                 session.enqueue(result)
 
                                 #service informs banned user (if he's present in the room)
-                                if to.getFullJID() in self.participants.keys():
+                                if to.getFullJID() in list(self.participants.keys()):
                                     other = self.participants[frm]
                                     relative_frm = self.fullJID() + '/' + to.getNick()
                                     x = Node('x', {'xmlns': 'http://jabber.org/protocol/muc#user'})
@@ -1984,7 +1984,7 @@ class Room:
                                 #	newitem.addChild(node=child)
                                 status = Node('status', {'code': '301'})
                                 x.addChild(node=newitem)
-                                for other in self.participants.values():
+                                for other in list(self.participants.values()):
                                     reply = Presence(other.getFullJID(), frm=relative_frm, typ='unavailable')
                                     reply.addChild(node=x)
                                     s = self.muc.server.getsession(other.getFullJID())
@@ -2077,7 +2077,7 @@ class Room:
                                             or self.getWhois() == "moderators" and self.participants[frm].getRole() == "moderator":
                                         newitem.setAttr('jid', to.getFullJID())
                                     x.addChild(node=newitem)
-                                    for other in self.participants.values():
+                                    for other in list(self.participants.values()):
                                         reply = Presence(other.getFullJID(), frm=relative_frm, typ='unavailable')
                                         reply.addChild(node=x)
                                         s = self.muc.server.getsession(other.getFullJID())
@@ -2138,7 +2138,7 @@ class Room:
 
                                 #service informs remaining occupants
                                 #if jid in self.participants.keys():
-                                for p in self.participants.values():
+                                for p in list(self.participants.values()):
                                     if p.getBareJID() == jid:
                                         relative_frm = self.fullJID() + '/' + nick
                                         x = Node('x', {'xmlns': 'http://jabber.org/protocol/muc#user'})
@@ -2150,7 +2150,7 @@ class Room:
                                             newitem.setAttr('jid', jid)
                                         x.addChild(node=newitem)
 
-                                        for other in self.participants.values():
+                                        for other in list(self.participants.values()):
                                             reply = Presence(other.getFullJID(), frm=relative_frm)
                                             reply.addChild(node=x)
                                             s = self.muc.server.getsession(other.getFullJID())
@@ -2322,7 +2322,7 @@ class Room:
                             role = item.getAttr('role')
                             jid = item.getAttr('jid')
                             to = None
-                            for k, v in self.participants.items():
+                            for k, v in list(self.participants.items()):
                                 if v.getNick() == nick:
                                     to = v
                             sender = self.participants[frm]
@@ -2332,7 +2332,7 @@ class Room:
                                 id = iq.getAttr('id')
                                 if id:
                                     reply.setAttr('id', id)
-                                for k, v in self.participants.items():
+                                for k, v in list(self.participants.items()):
                                     if v.getRole() == role:
                                         newitem = Node('item', {'nick': v.getNick(), 'role': v.getRole(), 'affiliation': v.getAffiliation()})
                                         #if not self.anonymous == "fully":
@@ -2358,7 +2358,7 @@ class Room:
                                     for v in self.whitelist:
                                         newitem = Node('item', {'affiliation': 'member'})
                                         newitem.setAttr('jid', v)
-                                        if v in self.participants.keys():
+                                        if v in list(self.participants.keys()):
                                             p = self.participants[v]
                                             newitem.setAttr('nick', p.getNick())
                                             newitem.setAttr('role', p.getRole())
@@ -2368,7 +2368,7 @@ class Room:
                                     for v in self.getRoomOwners():
                                         newitem = Node('item', {'affiliation': 'owner'})
                                         newitem.setAttr('jid', v)
-                                        if v in self.participants.keys():
+                                        if v in list(self.participants.keys()):
                                             p = self.participants[v]
                                             newitem.setAttr('nick', p.getNick())
                                             newitem.setAttr('role', p.getRole())
@@ -2378,7 +2378,7 @@ class Room:
                                     for v in self.getRoomAdmins():
                                         newitem = Node('item', {'affiliation': 'admin'})
                                         newitem.setAttr('jid', v)
-                                        if v in self.participants.keys():
+                                        if v in list(self.participants.keys()):
                                             p = self.participants[v]
                                             newitem.setAttr('nick', p.getNick())
                                             newitem.setAttr('role', p.getRole())
@@ -2643,7 +2643,7 @@ class Room:
         # </internal_joke>
 
         if nick:
-            for j, n in self.reserved_nicks.items():
+            for j, n in list(self.reserved_nicks.items()):
                 if nick == n:
                     self.DEBUG("Could not reserve nick " + str(nick), "warn")
                     return False
@@ -2686,7 +2686,7 @@ class Room:
                 elif var == "muc#register_roomnick":
                     nick = values[0]
                     self.DEBUG("Desired Nickname is %s" % (nick), "info")
-                    if nick in self.reserved_nicks.values() and nick:
+                    if nick in list(self.reserved_nicks.values()) and nick:
                         # Nick conflict
                         reply = stanza.buildReply(typ="error")
                         err = Node('error', {'code': '409', 'type': 'cancel'})
@@ -2719,7 +2719,7 @@ class Room:
         self.DEBUG("Client %s successfully registered in room %s" % (frm, self.getName()), "ok")
         # Grant membership to this user and tell everyone he's now a member (if he's in the room)
         to = None
-        for k, p in self.participants.items():
+        for k, p in list(self.participants.items()):
             if k == frm:
                 to = p
                 break
@@ -2744,7 +2744,7 @@ class Room:
 
         #service informs remaining occupants
         #if jid in self.participants.keys():
-        for p in self.participants.values():
+        for p in list(self.participants.values()):
             if p.getBareJID() == jid:
                 relative_frm = self.fullJID() + '/' + to.getNick()
                 x = Node('x', {'xmlns': 'http://jabber.org/protocol/muc#user'})
@@ -2756,7 +2756,7 @@ class Room:
                     newitem.setAttr('jid', jid)
                 x.addChild(node=newitem)
 
-                for other in self.participants.values():
+                for other in list(self.participants.values()):
                     reply = Presence(other.getFullJID(), frm=relative_frm)
                     reply.addChild(node=x)
                     s = self.muc.server.getsession(other.getFullJID())
@@ -2847,7 +2847,7 @@ class Room:
         if isinstance(fulljid, JID):
             fulljid = str(fulljid)
 
-        if fulljid not in self.participants.keys():
+        if fulljid not in list(self.participants.keys()):
             # Instantiate a new participant
             p = Participant(fulljid)
         else:
@@ -2908,7 +2908,7 @@ class Room:
                     p.getBareJID() in self.getRoomOwners():
                 # "Welcome back, sir"
                 # Check and/or register the nick
-                if p.getBareJID() in self.reserved_nicks.keys():
+                if p.getBareJID() in list(self.reserved_nicks.keys()):
                     if not self.reserved_nicks[p.getBareJID()]:
                         self.reserveNick(p.getBareJID(), p.getNick())
                     else:
@@ -2932,7 +2932,7 @@ class Room:
                     p.getBareJID() in self.getRoomOwners():
                 if password == self.getPassword():
                     # Check and/or register the nick
-                    if p.getBareJID() in self.reserved_nicks.keys():
+                    if p.getBareJID() in list(self.reserved_nicks.keys()):
                         if not self.reserved_nicks[p.getBareJID()]:
                             self.reserved_nicks[p.getBareJID()] = p.getNick()
                         else:
@@ -2974,7 +2974,7 @@ class Room:
         Set the affiliation of a participant
         """
         # If 'participant' is a string
-        if isinstance(participant, types.StringType):
+        if isinstance(participant, bytes):
             jid = participant
         # If its an instance of JID or Participant
         elif isinstance(participant, types.InstanceType):
@@ -3126,7 +3126,7 @@ class MUC(PlugIn):
             destroy.addChild(node=rea)
         x.addChild(node=item)
         x.addChild(node=destroy)
-        for k, p in room.participants.items():
+        for k, p in list(room.participants.items()):
             # Send a final presence
             relative_frm = room.fullJID() + "/" + p.getNick()
             pres = Presence(to=k, frm=relative_frm, typ="unavailable")
@@ -3169,7 +3169,7 @@ class MUC(PlugIn):
                 self.Presence_cb(session, stanza)
             # TODO: Implement the rest of protocols
         # Stanza directed to a specific room
-        if room in self.rooms.keys() and domain == str(self.jid):
+        if room in list(self.rooms.keys()) and domain == str(self.jid):
             self.rooms[room].dispatch(session, stanza)
         else:
             # The room does not exist
@@ -3271,7 +3271,7 @@ class MUC(PlugIn):
                     if id:
                         reply.setAttr('id', id)
                     # For each room in the conference, generate an 'item' element with info about the room
-                    for room, v in self.rooms.items():
+                    for room, v in list(self.rooms.items()):
                         #if not v.hidden and not v.locked:
                         if v.isPublicRoom() and not v.locked:
                             #attrs = { 'jid': str(room+'@'+self.jid), 'name': str(v.subject) }
@@ -3291,7 +3291,7 @@ class MUC(PlugIn):
             fh = open("roomdb.xml", 'r')
             roomdb = pickle.load(fh)
             fh.close()
-            for r in roomdb.values():
+            for r in list(roomdb.values()):
                 v = Room(name=r.name, subject=r.subject, muc=self, creator=r.creator, whitelist=copy.copy(r.whitelist), blacklist=copy.copy(r.blacklist))
                 v.config = r.config
                 v.locked = r.locked
@@ -3309,7 +3309,7 @@ class MUC(PlugIn):
         """
         try:
             roomdb = dict()
-            for k, v in self.rooms.items():
+            for k, v in list(self.rooms.items()):
                 if v.isPersistentRoom():
                     # Make a serializable object out of the room
                     r = SerializableRoom(v)
@@ -3338,7 +3338,7 @@ if __name__ == "__main__":
     conf.addRoom(r1)
     conf.addRoom(r2)
 
-    print p1
-    print p2
-    print r1
-    print conf
+    print(p1)
+    print(p2)
+    print(r1)
+    print(conf)

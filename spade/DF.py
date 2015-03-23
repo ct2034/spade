@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from Agent import PlatformAgent
-import AID
-import Behaviour
-import BasicFipaDateTime
-from SL0Parser import *
-from content import ContentObject
+from .Agent import PlatformAgent
+from . import AID
+from . import Behaviour
+from . import BasicFipaDateTime
+from .SL0Parser import *
+from .content import ContentObject
 import xmpp
 import copy
-import thread
+import _thread
 
 
 class DF(PlatformAgent):
@@ -49,7 +49,7 @@ class DF(PlatformAgent):
                                 reply = msg.createReply()
                                 reply.setSender(self.myAgent.getAID())
                                 reply.setPerformative("refuse")
-                                reply.setContent("( " + msg.getContent() + "(unsuported-function " + content.keys()[0] + "))")
+                                reply.setContent("( " + msg.getContent() + "(unsuported-function " + list(content.keys())[0] + "))")
                                 self.myAgent.send(reply)
                                 self.myAgent.DEBUG("Received message with no action. Refusing: " + str(content), 'warn')
 
@@ -62,7 +62,7 @@ class DF(PlatformAgent):
                             #ACLtemplate.setSender(msg.getSender())
                             template = (Behaviour.MessageTemplate(ACLtemplate))
 
-                            if co and "fipa:action" in co.keys() and "fipa:act" in co["fipa:action"].keys():
+                            if co and "fipa:action" in list(co.keys()) and "fipa:act" in list(co["fipa:action"].keys()):
                                 if co["fipa:action"]["fipa:act"] in ["register", "deregister"]:
                                     self.myAgent.addBehaviour(DF.RegisterBehaviour(msg, co), template)
                                     self.myAgent.DEBUG("Received REGISTER action: " + str(co))
@@ -142,7 +142,7 @@ class DF(PlatformAgent):
 
                 if self.content.action == "register":
 
-                    if dad.getAID().getName() not in self.myAgent.servicedb.keys():
+                    if dad.getAID().getName() not in list(self.myAgent.servicedb.keys()):
                         self.myAgent.db_mutex.acquire()
                         self.myAgent.servicedb[dad.getAID().getName()] = dad
                         self.myAgent.db_mutex.release()
@@ -166,7 +166,7 @@ class DF(PlatformAgent):
                                 self.myAgent.servicedb[dad.getAID().getName()].addService(s)
                                 self.myAgent.db_mutex.release()
                                 self.myAgent.DEBUG("Service successfully registered: " + str(s), 'ok')
-                        except Exception, err:
+                        except Exception as err:
                             reply.setPerformative("failure")
                             reply.setContent("(" + self.msg.getContent() + "(internal-error))")
                             self.myAgent.send(reply)
@@ -187,7 +187,7 @@ class DF(PlatformAgent):
 
                 elif self.content.action == "deregister":
 
-                    if dad.getAID().getName() not in self.myAgent.servicedb.keys():
+                    if dad.getAID().getName() not in list(self.myAgent.servicedb.keys()):
                         reply.setPerformative("failure")
                         reply.setContent("(" + self.msg.getContent() + "(not-registered))")
                         self.myAgent.send(reply)
@@ -220,7 +220,7 @@ class DF(PlatformAgent):
                                         self.myAgent.db_mutex.acquire()
                                         self.myAgent.servicedb[dad.getAID().getName()].delService(s)
                                         self.myAgent.db_mutex.release()
-                    except Exception, err:
+                    except Exception as err:
                         reply.setPerformative("failure")
                         reply.setContent("(" + self.msg.getContent() + '(internal-error "could not deregister service"))')
                         self.myAgent.send(reply)
@@ -248,7 +248,7 @@ class DF(PlatformAgent):
                     self.myAgent.DEBUG("Content processed " + str(co), 'info')
                     dad = DfAgentDescription(co=co.action.argument)
                     self.myAgent.DEBUG("DfAgentDescription extracted " + str(dad.asRDFXML()), 'info')
-                except KeyboardInterrupt, err:
+                except KeyboardInterrupt as err:
                     co_error = ContentObject(namespaces={"http://www.fipa.org/schemas/fipa-rdf0#": "fipa:"})
                     co_error["fipa:error"] = "missing-argument df-agent-description"
                     self.myAgent.DEBUG("REFUSE: " + str(co_error) + ": " + str(err), 'error')
@@ -270,7 +270,7 @@ class DF(PlatformAgent):
                     self.myAgent.send(reply)
 
                 if co["fipa:action"]["fipa:act"] == "register":
-                    if dad.getAID().getName() not in self.myAgent.servicedb.keys():
+                    if dad.getAID().getName() not in list(self.myAgent.servicedb.keys()):
                         self.myAgent.db_mutex.acquire()
                         self.myAgent.servicedb[dad.getAID().getName()] = dad
                         self.myAgent.db_mutex.release()
@@ -297,7 +297,7 @@ class DF(PlatformAgent):
                                 self.myAgent.servicedb[dad.getAID().getName()].addService(s)
                                 self.myAgent.db_mutex.release()
                                 self.myAgent.DEBUG("Service successfully registered: " + str(s), 'ok')
-                        except Exception, err:
+                        except Exception as err:
                             reply.setPerformative("failure")
                             co_error = ContentObject(namespaces={"http://www.fipa.org/schemas/fipa-rdf0#": "fipa:"})
                             co_error["fipa:error"] = "internal-error"
@@ -322,7 +322,7 @@ class DF(PlatformAgent):
                     return 1
 
                 elif co["fipa:action"]["fipa:act"] == "deregister":
-                    if dad.getAID().getName() not in self.myAgent.servicedb.keys():
+                    if dad.getAID().getName() not in list(self.myAgent.servicedb.keys()):
                         reply.setPerformative("failure")
                         co_error = ContentObject(namespaces={"http://www.fipa.org/schemas/fipa-rdf0#": "fipa:"})
                         co_error["fipa:error"] = 'not-registered'
@@ -352,7 +352,7 @@ class DF(PlatformAgent):
                         if dad.getServices() == []:
                             self.myAgent.db_mutex.acquire()
                             del self.myAgent.servicedb[dad.getAID().getName()]
-                            self.DEBUG("Deleting all agent entries: " + str(dad.getAID().getName() not in self.myAgent.servicedb.keys()))
+                            self.DEBUG("Deleting all agent entries: " + str(dad.getAID().getName() not in list(self.myAgent.servicedb.keys())))
                             self.myAgent.db_mutex.release()
                         else:
                             for ss in dad.getServices():
@@ -361,7 +361,7 @@ class DF(PlatformAgent):
                                         self.myAgent.db_mutex.acquire()
                                         self.myAgent.servicedb[dad.getAID().getName()].delService(s)
                                         self.myAgent.db_mutex.release()
-                    except Exception, err:
+                    except Exception as err:
                         reply.setPerformative("failure")
                         co_error = ContentObject(namespaces={"http://www.fipa.org/schemas/fipa-rdf0#": "fipa:"})
                         co_error["fipa:error"] = 'internal-error "could not deregister service"'
@@ -412,7 +412,7 @@ class DF(PlatformAgent):
                         try:
                             max_str = str(self.content.action.search["search-constraints"]["max-results"]).strip("[']")
                             max = int(max_str)
-                        except Exception, err:
+                        except Exception as err:
                             error = '(internal-error "max-results is not an integer")'
                             self.myAgent.DEBUG("FAILURE: internal-error 'max-results is not an integer' " + str(err), 'error')
                 if error:
@@ -428,13 +428,13 @@ class DF(PlatformAgent):
                 if "df-agent-description" in self.content.action.search:
                     try:
                         dad = DfAgentDescription(self.content.action.search["df-agent-description"])
-                    except Exception, err:
+                    except Exception as err:
                         self.myAgent.DEBUG("FAILURE: Could not extract DfAgentDescription from content: " + str(err), 'error')
 
                 self.myAgent.db_mutex.acquire()
                 if max in [-1, 0]:
                     # No limit
-                    for agentid, dads in self.myAgent.servicedb.items():
+                    for agentid, dads in list(self.myAgent.servicedb.items()):
                         if dads.match(dad):
                             d = copy.copy(dads)
                             if dad.services == []:
@@ -448,7 +448,7 @@ class DF(PlatformAgent):
                             result.append(d)
                 else:
                     max = abs(max)
-                    for agentid, dads in self.myAgent.servicedb.items():
+                    for agentid, dads in list(self.myAgent.servicedb.items()):
                         if max >= 0:
                             if dads.match(dad):
                                 d = copy.copy(dads)
@@ -496,7 +496,7 @@ class DF(PlatformAgent):
                     try:
                         max_str = str(self.content.action.argument.max_results)
                         max = int(max_str)
-                    except Exception, err:
+                    except Exception as err:
                         # Ignoring the exception
                         self.myAgent.DEBUG("FAILURE: (internal-error) max-results is not an integer! ", 'error')
                         #co_error = ContentObject()
@@ -507,14 +507,14 @@ class DF(PlatformAgent):
                     if self.content.action.argument.df_agent_description:
                         try:
                             dad = DfAgentDescription(co=self.content.action.argument.df_agent_description)
-                            self.myAgent.DEBUG("Searching for: " + str(dad) + " in ServiceDB: " + str(map(lambda s: str(s), self.myAgent.servicedb.values())))
-                        except Exception, err:
+                            self.myAgent.DEBUG("Searching for: " + str(dad) + " in ServiceDB: " + str([str(s) for s in list(self.myAgent.servicedb.values())]))
+                        except Exception as err:
                             self.myAgent.DEBUG("FAILURE: Could not extract DfAgentDescription from content: " + str(err), 'error')
 
                         self.myAgent.db_mutex.acquire()
                         if max in [-1, 0]:
                             # No limit
-                            for agentid, dads in self.myAgent.servicedb.items():
+                            for agentid, dads in list(self.myAgent.servicedb.items()):
                                 self.myAgent.DEBUG("Comparing " + str(dad) + " WITH " + str(dads) + " ==> " + str(dads.match(dad)), 'ok')
                                 if dads.match(dad):
                                     d = copy.copy(dads)
@@ -529,7 +529,7 @@ class DF(PlatformAgent):
                                     result.append(d)
                         else:
                             max = abs(max)
-                            for agentid, dads in self.myAgent.servicedb.items():
+                            for agentid, dads in list(self.myAgent.servicedb.items()):
                                 if max >= 0:
                                     if dads.match(dad):
                                         d = copy.copy(dads)
@@ -581,7 +581,7 @@ class DF(PlatformAgent):
                 try:
                     co = self.msg.getContentObject()
                     dad = DfAgentDescription(co=co.action.argument)
-                except KeyboardInterrupt, err:
+                except KeyboardInterrupt as err:
                     co_error = ContentObject(namespaces={"http://www.fipa.org/schemas/fipa-rdf0#": "fipa:"})
                     co_error["fipa:error"] = "missing-argument df-agent-description"
 
@@ -615,7 +615,7 @@ class DF(PlatformAgent):
                 reply.setContentObject(co)
                 self.myAgent.send(reply)
 
-                if dad.getAID().getName() in self.myAgent.servicedb.keys():
+                if dad.getAID().getName() in list(self.myAgent.servicedb.keys()):
 
                     try:
                         for ss in dad.getServices():
@@ -629,7 +629,7 @@ class DF(PlatformAgent):
                                 reply.setContentObject(co_error)
                                 self.myAgent.send(reply)
                                 self.myAgent.DEBUG("FAILURE: Could not modify service " + str(ss) + ". Service is NOT registered.", 'warn')
-                    except Exception, err:
+                    except Exception as err:
                         reply.setPerformative("failure")
                         co_error = ContentObject(namespaces={"http://www.fipa.org/schemas/fipa-rdf0#": "fipa:"})
                         co_error["fipa:error"] = "internal-error"
@@ -659,7 +659,7 @@ class DF(PlatformAgent):
                 #language is sl-0
                 try:
                         dad = DF.DfAgentDescription(self.content.action.modify[0][1])
-                except Exception, err:
+                except Exception as err:
                     error = "(missing-argument ams-agent-description)"
                     self.myAgent.DEBUG("FAILURE: Could not extract DfAgentDescription from content: " + str(err), 'error')
 
@@ -684,7 +684,7 @@ class DF(PlatformAgent):
                     reply.setContent("(" + str(self.msg.getContent()) + " true)")
                     self.myAgent.send(reply)
 
-                if dad.getAID().getName() in self.myAgent.servicedb.keys():
+                if dad.getAID().getName() in list(self.myAgent.servicedb.keys()):
 
                     try:
                         for ss in dad.getServices():
@@ -696,7 +696,7 @@ class DF(PlatformAgent):
                                 reply.setContent("(" + self.msg.getContent() + "(not-registered))")
                                 self.myAgent.send(reply)
                                 self.myAgent.DEBUG("FAILURE: Could not modify service " + str(ss) + ". Service is NOT registered.", 'warn')
-                    except Exception, err:
+                    except Exception as err:
                         reply.setPerformative("failure")
                         reply.setContent("(" + self.msg.getContent() + "(internal-error))")
                         self.myAgent.send(reply)
@@ -724,7 +724,7 @@ class DF(PlatformAgent):
 
         self.wui.start()
         self.servicedb = dict()
-        self.db_mutex = thread.allocate_lock()
+        self.db_mutex = _thread.allocate_lock()
 
         #self.setDefaultBehaviour()
         db = self.DefaultBehaviour()
@@ -755,7 +755,7 @@ class DfAgentDescription:
             self.loadSL0(content)
 
         if co:
-            if "df-agent-description" in co.keys():
+            if "df-agent-description" in list(co.keys()):
                 co = co["df-agent-description"]
             if co.name:
                 self.name = AID.aid(co=co.name)
@@ -769,7 +769,7 @@ class DfAgentDescription:
                         self.services.append(ServiceDescription(co=s))
             if co.lease_time:
                 self.lease_time = co.lease_time
-            if "lease-time" in co.keys():
+            if "lease-time" in list(co.keys()):
                 self.lease_time = co["lease-time"]
             if co.protocols:
                 self.protocols = copy.copy(co.protocols)
@@ -887,7 +887,7 @@ class DfAgentDescription:
                             self.addLanguage(l)
                 if s.getOwnership():
                     ss.setOwnership(s.getOwnership())
-                for k, v in s.getProperties().items():
+                for k, v in list(s.getProperties().items()):
                     ss.addProperty(k, v)
         return found
 
@@ -1071,7 +1071,7 @@ class ServiceDescription:
                 self.ownership = co.ownership
             if co.properties:
                 #print co.properties
-                for k, v in co.properties.items():
+                for k, v in list(co.properties.items()):
                     if ":" in k:
                         ns, key = k.split(":")
                     else:
@@ -1121,7 +1121,7 @@ class ServiceDescription:
         return self.properties
 
     def getProperty(self, prop):
-        if prop in self.properties.keys():
+        if prop in list(self.properties.keys()):
             return self.properties[prop]
         return None
 
@@ -1159,8 +1159,8 @@ class ServiceDescription:
             if self.ownership != y.getOwnership():
                 return False
         #properties
-        for k, v in y.properties.items():
-            if k in self.getProperties().keys():
+        for k, v in list(y.properties.items()):
+            if k in list(self.getProperties().keys()):
                 if y.getProperty(k) != v:
                     return False
             else:
@@ -1191,7 +1191,7 @@ class ServiceDescription:
                 self.ownership = content.ownership
 
             if "properties" in content:
-                for p in content.properties.set.asDict().values():
+                for p in list(content.properties.set.asDict().values()):
                     self.properties[str(p['name']).lower().strip("[']")] = str(p['value']).lower().strip("[']")
 
     def __str__(self):
@@ -1228,7 +1228,7 @@ class ServiceDescription:
 
         if len(self.properties) > 0:
             sb += ":properties \n (set\n"
-            for k, v in self.properties.items():
+            for k, v in list(self.properties.items()):
                 sb += " (property :name " + str(k) + " :value " + str(v) + ")\n"
             sb += ")\n"
 
@@ -1259,7 +1259,7 @@ class ServiceDescription:
             co["ownership"] = self.ownership
         if self.properties != {}:
             co["properties"] = ContentObject()  # namespaces={"http://www.fipa.org/schemas/fipa-rdf0#":"fipa:"})
-            for k, v in self.properties.items():
+            for k, v in list(self.properties.items()):
                 if ":" in k:
                     ns, key = k.split(":")
                 else:
@@ -1286,7 +1286,7 @@ class Service:
         self.inputs = inputs
         self.outputs = outputs
 
-        if co and "service" in co.keys():
+        if co and "service" in list(co.keys()):
             if co.service.name:
                 name = co.service.name
             if co.service.owner:

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-import Behaviour
+from . import Behaviour
 import xmpp
-import SocketServer
+import socketserver
 import pickle
 import random
-import thread
+import _thread
 import time
 import threading
 import socket
@@ -34,8 +34,8 @@ class P2P(object):
         self.p2p_ready = False  # Actually ready for P2P communication
         self.p2p = p2p
         self.p2p_routes = {}
-        self.p2p_lock = thread.allocate_lock()
-        self.p2p_send_lock = thread.allocate_lock()
+        self.p2p_lock = _thread.allocate_lock()
+        self.p2p_send_lock = _thread.allocate_lock()
         self._p2p_failures = 0  # Counter for failed attempts to send p2p messages
         if p2p:
             agent.registerLogComponent("p2p")
@@ -101,7 +101,7 @@ class P2P(object):
             #The contact is not in our routes
             self.myAgent.DEBUG("P2P: The contact " + str(to) + " is not in our routes. Starting negotiation", "warn")
             self.myAgent.initiateStream(to)
-            if to in self.p2p_routes.keys() and 'p2p' in self.p2p_routes[to].keys():
+            if to in list(self.p2p_routes.keys()) and 'p2p' in list(self.p2p_routes[to].keys()):
                 #If this p2p connection is marked as faulty,
                 #check if enough time has passed to try again a possible p2p connection
                 if not self.p2p_routes[to]['p2p']:
@@ -126,7 +126,7 @@ class P2P(object):
 
         #Check if there is already an open socket
         s = None
-        if "socket" in self.p2p_routes[to].keys():
+        if "socket" in list(self.p2p_routes[to].keys()):
             s = self.p2p_routes[to]["socket"]
         if not s:
             #Parse url
@@ -178,7 +178,7 @@ class P2P(object):
                     self.myAgent.DEBUG("P2P message sent through p2ppy", "ok")
                 sent = True
 
-            except Exception, e:
+            except Exception as e:
                 self.myAgent.DEBUG("Socket: send failed, threw an exception: " + str(e), "err")
                 self._p2p_failures += 1
                 # Dispose of old socket
@@ -218,7 +218,7 @@ class P2P(object):
             return True
 
 class P2PBehaviour(Behaviour.OneShotBehaviour):
-    class P2PRequestHandler(SocketServer.StreamRequestHandler):
+    class P2PRequestHandler(socketserver.StreamRequestHandler):
         timeout = 5
 
         def handle(self):
@@ -250,7 +250,7 @@ class P2PBehaviour(Behaviour.OneShotBehaviour):
                 except socket.timeout:
                     close = True
                     # handle timeout
-                except Exception, e:
+                except Exception as e:
                     self.server.owner.DEBUG("P2P Socket Closed to " + str(self.client_address), "err")
                     close = True
 
@@ -267,12 +267,12 @@ class P2PBehaviour(Behaviour.OneShotBehaviour):
 
         self.server.closing = True
         if self.server is not None:
-            thread.start_new_thread(self.server.shutdown, ())
+            _thread.start_new_thread(self.server.shutdown, ())
 
     def _process(self):
         try:
             self.server.serve_forever(poll_interval=0.5)  # handle_request()
-        except Exception, e:
+        except Exception as e:
             self.myAgent.DEBUG("P2P server failed: " + str(e), "err")
             self.kill()
 
@@ -293,19 +293,19 @@ class P2PBehaviour(Behaviour.OneShotBehaviour):
             except:
                 pass
             iq = Iq("result", queryNS=NS_DISCO_INFO)
-            for to in self.myAgent._P2P.p2p_routes.keys():
+            for to in list(self.myAgent._P2P.p2p_routes.keys()):
                 iq.setTo(to)
                 self.myAgent.send(iq)
             self.finished = True
 
     def onStart(self):
         self.server = None
-        SocketServer.ThreadingTCPServer.allow_reuse_address = True
+        socketserver.ThreadingTCPServer.allow_reuse_address = True
         #SocketServer.TCPServer.timeout = 1
         count = 5
         while self.server is None and count > 0:
             try:
-                self.server = SocketServer.ThreadingTCPServer(('', self.myAgent._P2P.P2PPORT), self.P2PRequestHandler)
+                self.server = socketserver.ThreadingTCPServer(('', self.myAgent._P2P.P2PPORT), self.P2PRequestHandler)
                 self.server.owner = self.myAgent
                 self.server.timeout = 0.5
             except:
@@ -388,7 +388,7 @@ class DiscoBehaviour(Behaviour.EventBehaviour):
                     services.append(str(child.getAttr("var")))
                 if "http://jabber.org/protocol/si/profile/spade-p2p-messaging" not in services:
                     frm = str(self.msg.getFrom().getStripped())
-                    if str(frm) in self.myAgent._P2P.getRoutes().keys():
+                    if str(frm) in list(self.myAgent._P2P.getRoutes().keys()):
                         #This agent does no longer support p2p
                         self.myAgent._P2P.acquire()
                         try:
@@ -440,7 +440,7 @@ class SendStreamInitiationBehav(Behaviour.OneShotBehaviour):
                         self.result = True
                     else:
                         self.myAgent._P2P.p2p_routes[str(msg.getFrom().getStripped())] = d
-                except Exception, e:
+                except Exception as e:
                     self.myAgent.DEBUG("Malformed StreamRequest Answer: " + str(e), "err")
                     self.myAgent.P2P.p2p_routes[str(msg.getFrom().getStripped())] = {}
             elif msg.getType() == "error":

@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-import Queue
+import queue
 import time
 import random
-from odict import odict
+from .odict import odict
 from copy import copy, deepcopy
 from uuid import uuid4
 from math import sqrt, pow, ceil, log, floor
 import math
 import types
 
-import dblite
+from . import dblite
 
 
 class TimeOut(Exception):
@@ -159,7 +159,7 @@ class Plan(dict):
         '''
         dict.__init__(self)
 
-        if not isinstance(cases, types.ListType):
+        if not isinstance(cases, list):
             raise TypeError
         if len(cases) <= 0:
             raise Exception("cases must have at least one case")
@@ -345,7 +345,7 @@ class TBCBP:
         services of the case MUST be registered in the TBCBP
         '''
         for s in case.services:
-            if s not in self.services.keys():
+            if s not in list(self.services.keys()):
                 return False
         case.time = self.getCaseTime(case)
 
@@ -421,7 +421,7 @@ class TBCBP:
         MAXPLANS = 1000
 
         results = []
-        plans = Queue.Queue()
+        plans = queue.Queue()
 
         t1 = time.time()
 
@@ -529,7 +529,7 @@ class TBCBP:
                     best_plan = random.choice(plans)
                 else:
                     i = random.randint(1, last)
-                    for k in exploit.keys():
+                    for k in list(exploit.keys()):
                         if i <= k:
                             best_plan = exploit[k]
                             break

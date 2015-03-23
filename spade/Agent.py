@@ -11,26 +11,26 @@ import xml.dom.minidom
 import traceback
 import xmpp
 import threading
-import thread
-import Queue
+import _thread
+import queue
 import time
-import MessageReceiver
-import AID
-import XMLCodec
-import ACLParser
-import Envelope
-import ACLMessage
-import BasicFipaDateTime
-import Behaviour
-import SL0Parser
-import fipa
-import peer2peer as P2P
-import socialnetwork
-import RPC
-import pubsub
-import bdi
-from logic import *
-from kb import *
+from . import MessageReceiver
+from . import AID
+from . import XMLCodec
+from . import ACLParser
+from . import Envelope
+from . import ACLMessage
+from . import BasicFipaDateTime
+from . import Behaviour
+from . import SL0Parser
+from . import fipa
+from . import peer2peer as P2P
+from . import socialnetwork
+from . import RPC
+from . import pubsub
+from . import bdi
+from .logic import *
+from .kb import *
 
 import mutex
 import types
@@ -38,9 +38,9 @@ import random
 import string
 import copy
 import socket
-import SocketServer
-import colors
-import cPickle as pickle
+import socketserver
+from . import colors
+import pickle as pickle
 import uuid
 try:
     import json
@@ -48,9 +48,9 @@ except ImportError:
     import simplejson as json 
 
 
-import DF
-from content import ContentObject
-from wui import *
+from . import DF
+from .content import ContentObject
+from .wui import *
 
 from xmpp import *
 
@@ -124,10 +124,10 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
         self._debug = False
         self._debug_filename = ""
         self._debug_file = None
-        self._debug_mutex = thread.allocate_lock()
+        self._debug_mutex = _thread.allocate_lock()
 
         self._messages = []
-        self._messages_mutex = thread.allocate_lock()
+        self._messages_mutex = _thread.allocate_lock()
 
         self.wui = WUI(self)
         self.wui.registerController("index", self.WUIController_admin)
@@ -197,15 +197,15 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
         behavs = {}
         attrs = {}
         sorted_attrs = []
-        for k in self._behaviourList.keys():
+        for k in list(self._behaviourList.keys()):
             behavs[id(k)] = k
         for attribute in self.__dict__:
             if eval("type(self." + attribute + ") not in [types.MethodType, types.BuiltinFunctionType, types.BuiltinMethodType, types.FunctionType]"):
                 if attribute not in ["_agent_log", "_messages"]:
                     attrs[attribute] = eval("str(self." + attribute + ")")
-        sorted_attrs = attrs.keys()
+        sorted_attrs = list(attrs.keys())
         sorted_attrs.sort()
-        import pygooglechart
+        from . import pygooglechart
         chart = pygooglechart.QRChart(125, 125)
         chart.add_data(self.getAID().asXML())
         chart.set_ec('H', 0)
@@ -314,7 +314,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
     def WUIController_search(self, query):
 
         #FIRST SEARCH AGENTS
-        from AMS import AmsAgentDescription
+        from .AMS import AmsAgentDescription
         agentslist = []
 
         #search by name
@@ -366,7 +366,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
             self.DEBUG("AWUIs: " + str(awuis))
 
         #NOW SEARCH SERVICES
-        from DF import Service, DfAgentDescription, ServiceDescription
+        from .DF import Service, DfAgentDescription, ServiceDescription
         servs = {}
 
         #search by name
@@ -374,7 +374,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
         search = self.searchService(s)
 
         for service in search:
-            if service.getDAD().getServices()[0].getType() not in servs.keys():
+            if service.getDAD().getServices()[0].getType() not in list(servs.keys()):
                 servs[service.getDAD().getServices()[0].getType()] = []
             if service not in servs[service.getDAD().getServices()[0].getType()]:
                 servs[service.getDAD().getServices()[0].getType()].append(service)
@@ -389,7 +389,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
         search = self.searchService(s)
 
         for service in search:
-            if service.getDAD().getServices()[0].getType() not in servs.keys():
+            if service.getDAD().getServices()[0].getType() not in list(servs.keys()):
                 servs[service.getDAD().getServices()[0].getType()] = []
             if service not in servs[service.getDAD().getServices()[0].getType()]:
                 servs[service.getDAD().getServices()[0].getType()].append(service)
@@ -399,7 +399,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
         search = self.searchService(s)
 
         for service in search:
-            if service.getDAD().getServices()[0].getType() not in servs.keys():
+            if service.getDAD().getServices()[0].getType() not in list(servs.keys()):
                 servs[service.getDAD().getServices()[0].getType()] = []
             if service not in servs[service.getDAD().getServices()[0].getType()]:
                 servs[service.getDAD().getServices()[0].getType()].append(service)
@@ -413,7 +413,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
         search = self.searchService(s)
 
         for service in search:
-            if service.getDAD().getServices()[0].getType() not in servs.keys():
+            if service.getDAD().getServices()[0].getType() not in list(servs.keys()):
                 servs[service.getDAD().getServices()[0].getType()] = []
             if service not in servs[service.getDAD().getServices()[0].getType()]:
                 servs[service.getDAD().getServices()[0].getType()].append(service)
@@ -434,7 +434,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
 
     @require_login
     def WUIController_sendmsg(self, to=None):
-        from AMS import AmsAgentDescription
+        from .AMS import AmsAgentDescription
         agentslist = []
         aad = AmsAgentDescription()
         res = self.searchAgent(aad)
@@ -447,10 +447,10 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
     @require_login
     def WUIController_sent(self, receivers=[], performative=None, sender=None, reply_with=None, reply_by=None, reply_to=None, in_reply_to=None, encoding=None, language=None, ontology=None, protocol=None, conversation_id=None, content=""):
         msg = ACLMessage.ACLMessage()
-        if isinstance(receivers, types.StringType):
+        if isinstance(receivers, bytes):
             a = AID.aid(name=receivers, addresses=["xmpp://" + receivers])
             msg.addReceiver(a)
-        elif isinstance(receivers, types.ListType):
+        elif isinstance(receivers, list):
             for r in receivers:
                 a = AID.aid(name=r, addresses=["xmpp://" + r])
                 msg.addReceiver(a)
@@ -500,13 +500,13 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
         if self._debug:
             # Print on screen
             if typ == "info":
-                print colors.color_none + self.getName() +":[" + component + "] " + dmsg + " , info" + colors.color_none
+                print(colors.color_none + self.getName() +":[" + component + "] " + dmsg + " , info" + colors.color_none)
             elif typ == "err":
-                print colors.color_none + self.getName() + ":[" + component + "] " + color_red + dmsg + " , error" + colors.color_none
+                print(colors.color_none + self.getName() + ":[" + component + "] " + color_red + dmsg + " , error" + colors.color_none)
             elif typ == "ok":
-                print colors.color_none + self.getName() + ":[" + component + "] " + colors.color_green + dmsg + " , ok" + colors.color_none
+                print(colors.color_none + self.getName() + ":[" + component + "] " + colors.color_green + dmsg + " , ok" + colors.color_none)
             elif typ == "warn":
-                print colors.color_none + self.getName() + ":[" + component + "] " + colors.color_yellow + dmsg + " , warn" + colors.color_none
+                print(colors.color_none + self.getName() + ":[" + component + "] " + colors.color_yellow + dmsg + " , warn" + colors.color_none)
 
         # Log to file
         if self._debug_file:
@@ -578,11 +578,11 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
 
         try:
             # Pass the FIPA-message to all the behaviours
-            for b in self._behaviourList.keys():
+            for b in list(self._behaviourList.keys()):
                 b.managePresence(frm, typ, status, show, role, affiliation)
 
             self._defaultbehaviour.managePresence(frm, typ, status, show, role, affiliation)
-        except Exception, e:
+        except Exception as e:
             # There is not a default behaviour yet
             self.DEBUG(str(e), "err")
 
@@ -592,7 +592,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
         read the message envelope and post the message to the agent
         """
         for child in mess.getChildren():
-            if (child.getNamespace() == "jabber:x:fipa") or (child.getNamespace() == u"jabber:x:fipa"):
+            if (child.getNamespace() == "jabber:x:fipa") or (child.getNamespace() == "jabber:x:fipa"):
                 # It is a jabber-fipa message
                 ACLmsg = ACLMessage.ACLMessage()
                 ACLmsg._attrs.update(mess.attrs)
@@ -816,7 +816,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
                 if not tojid:
                     #There is no one left to send the message to
                     return
-        except Exception, e:
+        except Exception as e:
             self.DEBUG("Could not send through P2PPY: " + str(e), "warn")
             method = "jabber"
 
@@ -832,7 +832,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
                     "xmpp" not in ACLmsg.getSender().getAddresses()[0]:
                 envelope.setFrom(ACLmsg.getSender())
                 generate_envelope = True
-        except Exception, e:
+        except Exception as e:
             self.DEBUG("Error setting sender: " + str(e), "err")
 
         try:
@@ -845,7 +845,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
                         "xmpp" not in i.getAddresses()[0]:
                     envelope.addTo(i)
                     generate_envelope = True
-        except Exception, e:
+        except Exception as e:
             self.DEBUG("Error setting receivers: " + str(e), "err")
 
         try:
@@ -859,7 +859,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
                         "xmpp" not in i.getAddresses()[0]:
                     envelope.addIntendedReceiver(i)
                     generate_envelope = True
-        except Exception, e:
+        except Exception as e:
             self.DEBUG("Error setting reply-to: " + str(e), "err")
 
         #Generate the envelope ONLY if it is needed
@@ -908,7 +908,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
                 self._P2P.acquire()
                 try:
                     sent = self._P2P.send(jabber_msg, jabber_id, method=method, ACLmsg=ACLmsg)
-                except Exception, e:
+                except Exception as e:
                     self.DEBUG("P2P Connection to " + str(self._P2P.getRoutes()) + jabber_id + " prevented. Falling back. " + str(e), "warn")
                     sent = False
                 self._P2P.release()
@@ -947,7 +947,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
         """
         try:
             self.roster.sendPresence("unavailable")
-        except Exception, e:
+        except Exception as e:
             self.DEBUG("Did not send 'unavailable' presence: " + str(e), 'warn')
 
         self.wui.stop()
@@ -1033,7 +1033,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
                         t = bL[b]
                         if t is not None:
                             if t.match(msg) is True:
-                                if not (isinstance(b, types.TypeType) or isinstance(b, types.ClassType)) and not issubclass(b.__class__, Behaviour.EventBehaviour):
+                                if not (isinstance(b, type) or isinstance(b, type)) and not issubclass(b.__class__, Behaviour.EventBehaviour):
                                     b.postMessage(msg)
                                 else:
                                     ib = b()
@@ -1046,12 +1046,12 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
 
                     if proc is False:
                         #If no template matches, post the message to the Default behaviour
-                        self.DEBUG("Message was not reclaimed by any behaviour. Posting to default behaviour: " + str(msg) + str(bL.keys()), "info", "msg")
+                        self.DEBUG("Message was not reclaimed by any behaviour. Posting to default behaviour: " + str(msg) + str(list(bL.keys())), "info", "msg")
                         if (self._defaultbehaviour is not None):
                             self._defaultbehaviour.postMessage(msg)
                     for beh in toRemove:
                         self.removeBehaviour(beh)
-            except Exception, e:
+            except Exception as e:
                 self.DEBUG("Agent " + self.getName() + " Exception in run: " + str(e), "err")
                 self._kill()
 
@@ -1115,7 +1115,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
                 behaviour.onEnd()
                 del behaviour
                 return True
-            except Exception, e:
+            except Exception as e:
                 self.DEBUG("Failed the execution of the OFFLINE behaviour " + str(behaviour) + ": " + str(e), "err")
                 return False
         else:
@@ -1125,20 +1125,20 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
         """
         removes a behavior from the agent
         """
-        if (type(behaviour) not in [types.ClassType, types.TypeType]) and (not issubclass(behaviour.__class__, Behaviour.EventBehaviour)):
+        if (type(behaviour) not in [type, type]) and (not issubclass(behaviour.__class__, Behaviour.EventBehaviour)):
             behaviour.kill()
         try:
             self._behaviourList.pop(behaviour)
             self.DEBUG("Behaviour removed: " + str(behaviour.getName()), "info", "behaviour")
         except KeyError:
-            self.DEBUG("removeBehaviour: Behaviour " + str(behaviour) + "with type " + str(type(behaviour)) + " is not registered in " + str(self._behaviourList.keys()), "warn")
+            self.DEBUG("removeBehaviour: Behaviour " + str(behaviour) + "with type " + str(type(behaviour)) + " is not registered in " + str(list(self._behaviourList.keys())), "warn")
 
     def hasBehaviour(self, behaviour):
         """
         returns True if the behaviour is active in the agent
         otherwise returns False
         """
-        if behaviour in self._behaviourList.keys():
+        if behaviour in list(self._behaviourList.keys()):
             return True
         return False
 
@@ -1259,6 +1259,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
             name = service.getName()
             self.DEBUG("Registering RPC service " + name)
             self.RPC[name.lower()] = (service, methodCall)
+
         return b.result
 
     def deregisterService(self, DAD, otherdf=None):
@@ -1267,7 +1268,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
         the service template is a DfAgentDescriptor
         """
 
-        if DAD.getName() in self.RPC.keys():
+        if DAD.getName() in list(self.RPC.keys()):
             del self.RPC[DAD.getName()]
 
         if isinstance(DAD, DF.Service):
@@ -1448,7 +1449,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
 
     def unsubscribeFromEvent(self, name, server=None, jid=None):
         r = self._pubsub.unsubscribe(name, server, jid)
-        if name in self._events.keys():
+        if name in list(self._events.keys()):
             self.removeBehaviour(self._events[name])
             del self._events[name]
         return r
@@ -1463,7 +1464,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
     #Knowledge Base services
     ########################
     def addBelieve(self, sentence, type="insert"):
-        if isinstance(sentence, types.StringType):
+        if isinstance(sentence, bytes):
             try:
                 if issubclass(Flora2KB.Flora2KB, self.kb.__class__):
                     self.kb.tell(sentence, type)
@@ -1475,7 +1476,7 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
         ###self.newBelieveCB(sentence) #TODO
 
     def removeBelieve(self, sentence, type="delete"):
-        if isinstance(sentence, types.StringType):
+        if isinstance(sentence, bytes):
             try:
                 if issubclass(Flora2KB.Flora2KB, self.kb.__class__):
                     self.kb.retract(sentence, type)
@@ -1496,9 +1497,6 @@ class AbstractAgent(MessageReceiver.MessageReceiver):
 
     def getFact(self, name):
         return self.kb.get(name)
-
-    def loadKB(self, module, into=None):
-        return self.kb.loadModule(module, into)
 
 ##################################
 
@@ -1532,7 +1530,7 @@ class jabberProcess(threading.Thread):
         while not self.forceKill():
             try:
                 err = self.jabber.Process(0.4)
-            except Exception, e:
+            except Exception as e:
                 _exception = sys.exc_info()
                 if _exception[0]:
                     self._owner.DEBUG('\n' + ''.join(traceback.format_exception(_exception[0], _exception[1], _exception[2])).rstrip(), "err")
@@ -1559,7 +1557,7 @@ class PlatformAgent(AbstractAgent):
         AbstractAgent.__init__(self, node, server, p2p=p2p)
 
         self.config = config
-        if 'adminpasswd' in config.keys():
+        if 'adminpasswd' in list(config.keys()):
             self.wui.passwd = config['adminpasswd']
 
         self.debug = debug
@@ -1612,12 +1610,12 @@ class PlatformAgent(AbstractAgent):
             self.jabber_process._kill()
 
         #Stop the Behaviours
-        for b in self._behaviourList.keys():  # copy.copy(self._behaviourList.keys()):
+        for b in list(self._behaviourList.keys()):  # copy.copy(self._behaviourList.keys()):
             try:
-                if not (isinstance(b, types.TypeType) or isinstance(b, types.ClassType)):
+                if not (isinstance(b, type) or isinstance(b, type)):
                     if not issubclass(b.__class__, Behaviour.EventBehaviour):
                         b.kill()
-            except Exception, e:
+            except Exception as e:
                 self.DEBUG("Could not kill behavior " + str(b) + ": " + str(e), "warn")
 
         if issubclass(self.__class__, BDIAgent):
@@ -1739,12 +1737,12 @@ class Agent(AbstractAgent):
 
     def _shutdown(self):
         #Stop the Behaviours
-        for b in self._behaviourList.keys():  # copy.copy(self._behaviourList.keys()):
+        for b in list(self._behaviourList.keys()):  # copy.copy(self._behaviourList.keys()):
             try:
-                if not (isinstance(b, types.TypeType) or isinstance(b, types.ClassType)):
+                if not (isinstance(b, type) or isinstance(b, type)):
                     if not issubclass(b.__class__, Behaviour.EventBehaviour):
                         b.kill()
-            except Exception, e:
+            except Exception as e:
                 self.DEBUG("Could not kill behavior " + str(b) + ": " + str(e), "warn")
 
         if issubclass(self.__class__, BDIAgent):

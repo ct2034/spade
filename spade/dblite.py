@@ -47,7 +47,7 @@ Syntax :
 """
 
 import os
-import cPickle
+import pickle
 import bisect
 
 # compatibility with Python 2.3
@@ -69,7 +69,7 @@ class Index:
         return iter(self.db.indices[self.field])
 
     def keys(self):
-        return self.db.indices[self.field].keys()
+        return list(self.db.indices[self.field].keys())
 
     def __getitem__(self, key):
         """Lookup by key : return the list of records where
@@ -127,7 +127,7 @@ class Base:
                 continue
             reset = True
             self.indices[f] = {}
-            for _id, record in self.records.iteritems():
+            for _id, record in self.records.items():
                 # use bisect to quickly insert the id in the list
                 bisect.insort(self.indices[f].setdefault(record[f], []),
                               _id)
@@ -140,11 +140,11 @@ class Base:
     def open(self):
         """Open an existing database and load its content into memory"""
         _in = open(self.name)  # don't specify binary mode !
-        self.fields = cPickle.load(_in)
-        self.next_id = cPickle.load(_in)
-        self.records = cPickle.load(_in)
-        self.indices = cPickle.load(_in)
-        for f in self.indices.keys():
+        self.fields = pickle.load(_in)
+        self.next_id = pickle.load(_in)
+        self.records = pickle.load(_in)
+        self.indices = pickle.load(_in)
+        for f in list(self.indices.keys()):
             setattr(self, '_' + f, Index(self, f))
         _in.close()
         self.mode = "open"
@@ -153,10 +153,10 @@ class Base:
     def commit(self):
         """Write the database to a file"""
         out = open(self.name, 'wb')
-        cPickle.dump(self.fields, out)
-        cPickle.dump(self.next_id, out)
-        cPickle.dump(self.records, out)
-        cPickle.dump(self.indices, out)
+        pickle.dump(self.fields, out)
+        pickle.dump(self.next_id, out)
+        pickle.dump(self.records, out)
+        pickle.dump(self.indices, out)
         out.close()
 
     def insert(self, *args, **kw):
@@ -171,7 +171,7 @@ class Base:
         # initialize all fields to None
         record = dict([(f, None) for f in self.fields])
         # set keys and values
-        for (k, v) in kw.iteritems():
+        for (k, v) in kw.items():
             record[k] = v
         # add the key __id__ : record identifier
         record['__id__'] = self.next_id
@@ -180,7 +180,7 @@ class Base:
         # create an entry in the dictionary self.records, indexed by __id__
         self.records[self.next_id] = record
         # update index
-        for ix in self.indices.keys():
+        for ix in list(self.indices.keys()):
             bisect.insort(self.indices[ix].setdefault(record[ix], []),
                           self.next_id)
         # increment the next __id__ to attribute
@@ -218,7 +218,7 @@ class Base:
             r = removed.pop()
             _id = r['__id__']
             # remove id from indices
-            for indx in self.indices.keys():
+            for indx in list(self.indices.keys()):
                 pos = bisect.bisect(self.indices[indx][r[indx]], _id) - 1
                 del self.indices[indx][r[indx]][pos]
                 if not self.indices[indx][r[indx]]:
@@ -231,8 +231,8 @@ class Base:
         """Update the record with new keys and values and update indices"""
         # update indices
         _id = record["__id__"]
-        for indx in self.indices.keys():
-            if indx in kw.keys():
+        for indx in list(self.indices.keys()):
+            if indx in list(kw.keys()):
                 if record[indx] == kw[indx]:
                     continue
                 # remove id for the old value
@@ -292,7 +292,7 @@ class Base:
 
     def __iter__(self):
         """Iteration on the records"""
-        return self.records.itervalues()
+        return iter(self.records.values())
 
 if __name__ == '__main__':
     # test on a 1000 record base
@@ -302,64 +302,64 @@ if __name__ == '__main__':
     db = Base('PyDbLite_test')
     db.create('name', 'age', 'size', 'birth', mode="override")
     for i in range(1000):
-        db.insert(name=unicode(random.choice(names)),
+        db.insert(name=str(random.choice(names)),
                   age=random.randint(7, 47), size=random.uniform(1.10, 1.95),
                   birth=datetime.date(1990, 10, 10))
     db.create_index('age')
     db.commit()
 
-    print 'Record #20 :', db[20]
-    print '\nRecords with age=30 :'
+    print('Record #20 :', db[20])
+    print('\nRecords with age=30 :')
     for rec in db._age[30]:
-        print '%-10s | %2s | %s' % (rec['name'], rec['age'], round(rec['size'], 2))
+        print('%-10s | %2s | %s' % (rec['name'], rec['age'], round(rec['size'], 2)))
 
-    print "\nSame with __call__"
+    print("\nSame with __call__")
     for rec in db(age=30):
-        print '%-10s | %2s | %s' % (rec['name'], rec['age'], round(rec['size'], 2))
-    print db._age[30] == db(age=30)
+        print('%-10s | %2s | %s' % (rec['name'], rec['age'], round(rec['size'], 2)))
+    print(db._age[30] == db(age=30))
 
-    db.insert(name=unicode(random.choice(names)))  # missing fields
-    print '\nNumber of records with 30 <= age < 33 :',
-    print sum([1 for r in db if 33 > r['age'] >= 30])
+    db.insert(name=str(random.choice(names)))  # missing fields
+    print('\nNumber of records with 30 <= age < 33 :', end=' ')
+    print(sum([1 for r in db if 33 > r['age'] >= 30]))
 
-    print db.delete([])
+    print(db.delete([]))
 
-    d = db.delete([r for r in db if 32 > r['age'] >= 30 and r['name'] == u'pierre'])
-    print "\nDeleting %s records with name == 'pierre' and 30 <= age < 32" % d
-    print '\nAfter deleting records '
+    d = db.delete([r for r in db if 32 > r['age'] >= 30 and r['name'] == 'pierre'])
+    print("\nDeleting %s records with name == 'pierre' and 30 <= age < 32" % d)
+    print('\nAfter deleting records ')
     for rec in db._age[30]:
-        print '%-10s | %2s | %s' % (rec['name'], rec['age'], round(rec['size'], 2))
-    print '\n', sum([1 for r in db]), 'records in the database'
-    print '\nMake pierre uppercase for age > 27'
+        print('%-10s | %2s | %s' % (rec['name'], rec['age'], round(rec['size'], 2)))
+    print('\n', sum([1 for r in db]), 'records in the database')
+    print('\nMake pierre uppercase for age > 27')
     for record in ([r for r in db if r['name'] == 'pierre' and r['age'] > 27]):
-        db.update(record, name=u"Pierre")
-    print len([r for r in db if r['name'] == u'Pierre']), 'Pierre'
-    print len([r for r in db if r['name'] == u'pierre']), 'pierre'
-    print len([r for r in db if r['name'] in [u'pierre', u'Pierre']]), 'p/Pierre'
-    print 'is unicode :', isinstance(db[20]['name'], unicode)
+        db.update(record, name="Pierre")
+    print(len([r for r in db if r['name'] == 'Pierre']), 'Pierre')
+    print(len([r for r in db if r['name'] == 'pierre']), 'pierre')
+    print(len([r for r in db if r['name'] in ['pierre', 'Pierre']]), 'p/Pierre')
+    print('is unicode :', isinstance(db[20]['name'], str))
     db.commit()
     db.open()
-    print '\nSame operation after commit + open'
-    print len([r for r in db if r['name'] == u'Pierre']), 'Pierre'
-    print len([r for r in db if r['name'] == u'pierre']), 'pierre'
-    print len([r for r in db if r['name'] in [u'pierre', u'Pierre']]), 'p/Pierre'
-    print 'is unicode :', isinstance(db[20]['name'], unicode)
+    print('\nSame operation after commit + open')
+    print(len([r for r in db if r['name'] == 'Pierre']), 'Pierre')
+    print(len([r for r in db if r['name'] == 'pierre']), 'pierre')
+    print(len([r for r in db if r['name'] in ['pierre', 'Pierre']]), 'p/Pierre')
+    print('is unicode :', isinstance(db[20]['name'], str))
 
-    print "\nDeleting record #20"
+    print("\nDeleting record #20")
     del db[20]
     if not 20 in db:
-        print "record 20 removed"
+        print("record 20 removed")
 
-    print db[21]
+    print(db[21])
     db.drop_field('name')
-    print db[21]
+    print(db[21])
     db.add_field('adate', datetime.date.today())
-    print db[21]
+    print(db[21])
 
-    k = db._age.keys()[0]
-    print "key", k
-    print k in db._age
+    k = list(db._age.keys())[0]
+    print("key", k)
+    print(k in db._age)
     db.delete(db._age[k])
-    print db._age[k]
-    print k in db._age
+    print(db._age[k])
+    print(k in db._age)
 ## end of http://code.activestate.com/recipes/496770/ }}}

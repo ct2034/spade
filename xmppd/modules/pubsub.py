@@ -41,7 +41,7 @@ class PSNode(object):
             self.items[id] = content
             self.items_timestamp[id] = datetime.utcnow().isoformat().split('.')[0] + 'Z'
             #print self.items_timestamp[id], self.items[id], id
-        except Exception, e:
+        except Exception as e:
             self.DEBUG('Exception in addItem: ' + str(e), "error")
 
     def __repr__(self):
@@ -80,7 +80,7 @@ class PubSubServer(PlugIn):
 
             #print node.members
 
-            for jid in node.members.keys():
+            for jid in list(node.members.keys()):
                 #print 'Enviando %s a %s' % (item_id,jid)
                 msg = Message(frm=self.name, to=jid)
                 msg.setID(str(uuid4()))  # TODO: Do this automatically in xmpp.protocol.Protocol
@@ -95,7 +95,7 @@ class PubSubServer(PlugIn):
                 msg.addChild(node=event_node)
                 s = self._owner.getsession(jid)
                 s.send(msg)
-        except Exception, e:
+        except Exception as e:
             self.DEBUG('Exception in sendItem: ' + str(e), "error")
 
         #TODO: If we had a maximum, we should remove the first item here. Doing a FIFO.
@@ -193,7 +193,7 @@ class PubSubServer(PlugIn):
                 self.DEBUG('Node was deleted succesfully %s'%str(stanza.buildReply('result')), 'info')
 
                 # Notify no all subscribers
-                for jid in node.members.keys():
+                for jid in list(node.members.keys()):
                     msg = Message(frm=self.name, to=jid)
                     msg.setID(str(uuid4()))  # TODO: Do this automatically in xmpp.protocol.Protocol
                     event_node = Node(tag='event', attrs={'xmlns': NS_PUBSUB + '#event'})
@@ -362,5 +362,5 @@ class PubSubServer(PlugIn):
             raise NodeProcessed
         except NodeProcessed:
             raise NodeProcessed
-        except Exception, e:
+        except Exception as e:
             self.DEBUG("Exception in PubSub Handler: " + str(e), "error")

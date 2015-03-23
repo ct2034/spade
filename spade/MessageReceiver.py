@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import threading
 import sys
-from Queue import *
+from queue import *
 import time
 
 

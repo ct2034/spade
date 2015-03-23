@@ -36,7 +36,7 @@ def generateCode():
 
     if hostname == "localhost":
         hostname = "127.0.0.1"
-        print "Translating localhost DNS to IP (127.0.0.1)."
+        print("Translating localhost DNS to IP (127.0.0.1).")
 
     acc_passwd = "".join([string.ascii_letters[int(
         random.randint(0, len(string.ascii_letters) - 1))] for a in range(8)])

@@ -19,8 +19,8 @@ Provides library with all Non-SASL and SASL authentication mechanisms.
 Can be used both for client and transport authentication.
 """
 
-from protocol import *
-from client import PlugIn
+from .protocol import *
+from .client import PlugIn
 import base64,random,dispatcher
 import hashlib
 
@@ -62,7 +62,7 @@ class NonSASL(PlugIn):
             seq=query.getTagData('sequence')
             self.DEBUG("Performing zero-k authentication",'ok')
             hash = hashlib.sha1(hashlib.sha1(self.password).hexdigest()+token).hexdigest()
-            for foo in xrange(int(seq)): hash = hashlib.sha1(hash).hexdigest()
+            for foo in range(int(seq)): hash = hashlib.sha1(hash).hexdigest()
             query.setTagData('hash',hash)
             method='0k'
         else:
@@ -102,7 +102,7 @@ class SASL(PlugIn):
         self.password=password
 
     def plugin(self,owner):
-        if not self._owner.Dispatcher.Stream._document_attrs.has_key('version'): self.startsasl='not-supported'
+        if 'version' not in self._owner.Dispatcher.Stream._document_attrs: self.startsasl='not-supported'
         elif self._owner.Dispatcher.Stream.features:
             try: self.FeaturesHandler(self._owner.Dispatcher,self._owner.Dispatcher.Stream.features)
             except NodeProcessed: pass
@@ -120,10 +120,10 @@ class SASL(PlugIn):
 
     def plugout(self):
         """ Remove SASL handlers from owner's dispatcher. Used internally. """
-	self._owner.UnregisterHandler('features',self.FeaturesHandler,xmlns=NS_STREAMS)
+        self._owner.UnregisterHandler('features',self.FeaturesHandler,xmlns=NS_STREAMS)
         self._owner.UnregisterHandler('challenge',self.SASLHandler,xmlns=NS_SASL)
-	self._owner.UnregisterHandler('failure',self.SASLHandler,xmlns=NS_SASL)
-	self._owner.UnregisterHandler('success',self.SASLHandler,xmlns=NS_SASL)
+        self._owner.UnregisterHandler('failure',self.SASLHandler,xmlns=NS_SASL)
+        self._owner.UnregisterHandler('success',self.SASLHandler,xmlns=NS_SASL)
 
 
     def FeaturesHandler(self,conn,feats):
@@ -153,7 +153,8 @@ class SASL(PlugIn):
 
     def SASLHandler(self,conn,challenge):
         """ Perform next SASL auth step. Used internally. """
-        if challenge.getNamespace()<>NS_SASL: return
+        if not challenge.getNamespace() == NS_SASL:
+            return
         if challenge.getName()=='failure':
             self.startsasl='failure'
             try: reason=challenge.getChildren()[0]
@@ -178,7 +179,7 @@ class SASL(PlugIn):
             key,value=pair.split('=', 1)
             if value[:1]=='"' and value[-1:]=='"': value=value[1:-1]
             chal[key]=value
-        if chal.has_key('qop') and chal['qop']=='auth':
+        if 'qop' in chal and chal['qop']=='auth':
             resp={}
             resp['username']=self.username
             resp['realm']=self._owner.Server
@@ -202,7 +203,7 @@ class SASL(PlugIn):
 ########################################3333
             node=Node('response',attrs={'xmlns':NS_SASL},payload=[base64.encodestring(sasl_data[:-1]).replace('\r','').replace('\n','')])
             self._owner.send(node.__str__())
-        elif chal.has_key('rspauth'): self._owner.send(Node('response',attrs={'xmlns':NS_SASL}).__str__())
+        elif 'rspauth' in chal: self._owner.send(Node('response',attrs={'xmlns':NS_SASL}).__str__())
         else: 
             self.startsasl='failure'
             self.DEBUG('Failed SASL authentification: unknown challenge','error')

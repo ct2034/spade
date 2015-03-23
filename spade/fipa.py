@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-import Behaviour
-import SL0Parser
-import DF
-from content import *
+from . import Behaviour
+from . import SL0Parser
+from . import DF
+from .content import *
 import random
 
 
@@ -52,11 +52,11 @@ class SearchAgentBehaviour(Behaviour.OneShotBehaviour):
             try:
                 co = msg.getContentObject()
                 self.result = []
-                from AMS import AmsAgentDescription
+                from .AMS import AmsAgentDescription
                 for i in co["fipa:result"]:
                     self.result.append(AmsAgentDescription(co=i))
 
-            except Exception, e:
+            except Exception as e:
                 self.DEBUG("Parse Exception: " + str(e), "err")
                 self.result = []
                 return None
@@ -178,9 +178,7 @@ class registerServiceBehaviour(Behaviour.OneShotBehaviour):
 
         self.myAgent.send(self._msg)
 
-        self.result = True
-        msg = self._receive(True, 30)
-        print msg
+        msg = self._receive(True, 20)
         if msg is None or msg.getPerformative() not in ['agree', 'inform']:
             self.myAgent.DEBUG("There was an error registering the service " + str(self.DAD) + "(not agree)", "warn")
             self.result = False
@@ -309,7 +307,7 @@ class searchServiceBehaviour(Behaviour.OneShotBehaviour):
                 d = DF.DfAgentDescription(co=dfd)
                 self.result.append(d)
 
-        except Exception, e:
+        except Exception as e:
             self.DEBUG("Exception searching service: " + str(e), "err")
             return
 

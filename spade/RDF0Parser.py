@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import xml.sax
 from xml.sax import handler
-import cStringIO
+import io
 
 
 class Newdict(dict):
@@ -10,7 +10,7 @@ class Newdict(dict):
 
     def pprint(self, ind=0):
         s = ""
-        for k, v in self.items():
+        for k, v in list(self.items()):
             try:
                 s = s + ('\t' * ind) + str(k) + ":\n" + v.pprint(ind + 1) + '\n'
             except:
@@ -185,7 +185,7 @@ class RDF0Parser(handler.ContentHandler):
                     for code in content[self.ACTION][self.IMPLBY][self.ALT]:
                         accum2 = ""
                         for key in keys:
-                            if key in code[self.CODE].keys():
+                            if key in list(code[self.CODE].keys()):
                                 accum2 = accum2 + self.encodeTag(btag(self.FIPA_PREF, key), code[self.CODE][key])
                         accum = accum + self.encodeTag(btag(self.FIPA_PREF, self.CODE), accum2)
 
@@ -253,12 +253,12 @@ class RDF0Parser(handler.ContentHandler):
         elif uri == self.FIPA_NS:
             self.prefixs['fipa'] = prefix
         else:
-            print "RDFParser: Not recognized URI"
+            print("RDFParser: Not recognized URI")
             #excepcio sino peta despres la clau
 
     def startElementNS(self, name, qname, attributes):
 
-        print "RDF0: seNS" + str(name) + " " + str(qname) + " " + str(attributes)
+        print("RDF0: seNS" + str(name) + " " + str(qname) + " " + str(attributes))
 
         self.accumulator = ""
 
@@ -269,7 +269,7 @@ class RDF0Parser(handler.ContentHandler):
         #fipa Actions
         if str(self.FIPA_NS + self.ACTION).lower() == str(name[0] + name[1]).lower():
         #if btag(self.prefixs.fipa,self.ACTION).lower() == qname.lower():
-            print "MATCH ACTION"
+            print("MATCH ACTION")
             self.content[self.ACTION] = Newdict()
             self.s = self.ACTION
             if btag(self.prefixs.rdf, self.ID) in attributes.getQNames():
@@ -321,10 +321,10 @@ class RDF0Parser(handler.ContentHandler):
                 self.content[self.DESCRIPTION][self.ABOUT] = attributes.getValueByQName(btag(self.prefixs.rdf, self.ABOUT))
 
         else:
-            print "NO FIPA MATCH"
+            print("NO FIPA MATCH")
             #self.content[name[1]] = None
 
-        print "SELF.S " + str(self.s)
+        print("SELF.S " + str(self.s))
 
         # if tag refers to a resource
         if str(self.RDF_NS + self.RESOURCE).lower() == str(name[0] + name[1]).lower():
@@ -336,12 +336,12 @@ class RDF0Parser(handler.ContentHandler):
         #if btag(self.prefixs.rdf,self.DATATYPE) in attributes.getQNames():
             self.datatype[name] = attributes.getValueByQName(btag(self.prefixs.rdf, self.DATATYPE))
 
-        print "RDF0: seNS: self.s " + str(self.s)
+        print("RDF0: seNS: self.s " + str(self.s))
 
     def endElementNS(self, name, qname):
 
-        print "RDF0: eeNS" + str(name) + " " + str(qname)
-        print "RDF0: eeNS: self.s " + str(self.s)
+        print("RDF0: eeNS" + str(name) + " " + str(qname))
+        print("RDF0: eeNS: self.s " + str(self.s))
 
         # tags with resource don't need any value
         if name in self.resource:
@@ -361,7 +361,7 @@ class RDF0Parser(handler.ContentHandler):
             self.content[self.s][self.ACT] = self.accumulator
 
         elif self.ARGUMENT.lower() == name[1].lower():
-            if self.content[self.s][self.ARGUMENT].keys() == []:
+            if list(self.content[self.s][self.ARGUMENT].keys()) == []:
                 self.content[self.s][self.ARGUMENT] = self.accumulator
 
         elif self.BAG.lower() == name[1].lower() or self.SEQ.lower() == name[1].lower() or self.ALT.lower() == name[1].lower():
@@ -430,7 +430,7 @@ class RDF0Parser(handler.ContentHandler):
 
         #setting handler and start parsing
         parser.setContentHandler(self)
-        parser.parse(cStringIO.StringIO(str(s)))
+        parser.parse(io.StringIO(str(s)))
 
         #return generated content
         return self.content
@@ -441,9 +441,9 @@ if __name__ == "__main__":
     s = f.read()
     rdfparser = RDF0Parser()
     content = rdfparser.parse(s)
-    print "#################################"
+    print("#################################")
     #print content
-    print content.pprint()
+    print(content.pprint())
     #result=rdfparser.encode(content)
     #print result
     #print "#################################"

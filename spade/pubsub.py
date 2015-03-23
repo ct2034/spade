@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import itertools
-from Behaviour import MessageTemplate, OneShotBehaviour
+from .Behaviour import MessageTemplate, OneShotBehaviour
 
 from xmpp.protocol import *
 from xmpp.simplexml import Node

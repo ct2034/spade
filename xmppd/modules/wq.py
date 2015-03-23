@@ -79,7 +79,7 @@ class Group:
                     reply.addChild(node=err)
                     session.enqueue(reply)
                     return
-                except Exception, e:
+                except Exception as e:
                     self.DEBUG("Unknown exception when user was joining a group", "error")
                     return
         elif depart_queue:
@@ -114,7 +114,7 @@ class Group:
                     session.enqueue(reply)
                     return
 
-                except Exception, e:
+                except Exception as e:
                     self.DEBUG("Unknown exception when user was departing a group", "error")
                     return
         elif queue_status:
@@ -135,7 +135,7 @@ class Group:
                 return
 
     def addUser(self, barejid):
-        if barejid not in self.users.keys():
+        if barejid not in list(self.users.keys()):
             self.users[barejid] = None
             self.DEBUG("User %s joined group %s" % (barejid, self.getName()), "ok")
             return True
@@ -143,7 +143,7 @@ class Group:
             raise Conflict
 
     def delUser(self, barejid):
-        if barejid in self.users.keys():
+        if barejid in list(self.users.keys()):
             del self.users[barejid]
             self.DEBUG("User %s departed group %s" % (barejid, self.getName()), "ok")
             return True
@@ -194,7 +194,7 @@ class WQ(PlugIn):
         elif not group and name:
             group = Group(name, self)
         elif group:
-            if group.getName() in self.groups.keys():
+            if group.getName() in list(self.groups.keys()):
                 return False
             else:
                 self.groups[group.getName()] = group
@@ -202,7 +202,7 @@ class WQ(PlugIn):
                 return True
 
     def addUser(self, barejid, gname):
-        if gname not in self.groups.keys():
+        if gname not in list(self.groups.keys()):
             # Group does not exist
             raise ItemNotFound
         else:
@@ -229,7 +229,7 @@ class WQ(PlugIn):
                 self.Presence_cb(session, stanza)
             # TODO: Implement the rest of protocols
         # Stanza directed to a specific group
-        if gname in self.groups.keys() and domain == str(self.jid):
+        if gname in list(self.groups.keys()) and domain == str(self.jid):
             self.groups[gname].dispatch(session, stanza)
         else:
             # The room does not exist

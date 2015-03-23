@@ -38,11 +38,12 @@ import select
 import random
 import os
 import sys
-import thread
+import _thread
 import errno
 import time
 import threading
 import hashlib
+import imp
 globals()['DEFAULT_LANG'] = 'en'
 #globals()['LANG_LIST'] = []
 
@@ -150,7 +151,7 @@ class fake_select:
             data = {}
             poll = {'in': [], 'out': [], 'err': []}
             out = []
-            for x, y in self._registered.iteritems():
+            for x, y in list(self._registered.items()):
                 if y['mask'] & self.POLLIN == self.POLLIN:
                     poll['in'] += [y['fd']]
                 if y['mask'] & self.POLLOUT == self.POLLOUT:
@@ -171,26 +172,26 @@ class fake_select:
 
             for x in poll['in']:
                 if x in pi:
-                    if x.fileno() in data.keys():
+                    if x.fileno() in list(data.keys()):
                         data[x.fileno()]['mask'] = data[x.fileno()]['mask'] | self.POLLIN
                     else:
                         data[x.fileno()] = {'fd': x, 'mask': self.POLLIN}
 
             for x in poll['out']:
                 if x in po:
-                    if x.fileno() in data.keys():
+                    if x.fileno() in list(data.keys()):
                         data[x.fileno()]['mask'] = data[x.fileno()]['mask'] | self.POLLOUT
                     else:
                         data[x.fileno()] = {'fd': x, 'mask': self.POLLOUT}
 
             for x in poll['err']:
                 if x in pe:
-                    if x.fileno() in data.keys():
+                    if x.fileno() in list(data.keys()):
                         data[x.fileno()]['mask'] = data[x.fileno()]['mask'] | self.POLLERR
                     else:
                         data[x.fileno()] = {'fd': x, 'mask': self.POLLERR}
 
-            for k, d in data.iteritems():
+            for k, d in list(data.items()):
                 out += [(k, d['mask'])]
             return out
 
@@ -208,7 +209,7 @@ globals().update({'LANG_LIST': []})
 #for m in os.listdir('locale'):
 #    if m[:2]=='__' or m[-3:]<>'.py': continue
 #    execfile(os.getcwd() + '/locale/' + m[:-3] + '.py')
-from locales import *
+from .locales import *
 
 
 class localizer:
@@ -225,16 +226,16 @@ class localizer:
         return True
 
     def localize(self, val, lang=None):
-        if lang is None or lang not in val.keys():
+        if lang is None or lang not in list(val.keys()):
             lang = self._lang
-        if lang not in val.keys() and self._default in val.keys():
+        if lang not in list(val.keys()) and self._default in list(val.keys()):
             lang = self._default
 
         try:
             return val[lang]
         except:
-            if len(val.keys()) > 0:
-                return val[val.keys()[0]]
+            if len(list(val.keys())) > 0:
+                return val[list(val.keys())[0]]
             else:
                 return ''
 
@@ -243,7 +244,7 @@ class localizer:
             var, code, text = record.split(' -- ')
             name = var.upper().replace('-', '_')
             #if globals()['cmd_options'].enable_debug == True: print 'adding ' + name + '::' + code
-            if name in globals().keys():
+            if name in list(globals().keys()):
                 globals()[name].update({code: text})
             else:
                 globals()[name] = {code: text}
@@ -264,7 +265,7 @@ class Session_Dummy:
 
 class Session:
     def __init__(self, socket, server, xmlns, peer=None):
-        self._lock = thread.allocate_lock()
+        self._lock = _thread.allocate_lock()
         self.xmlns = xmlns
         if peer:
             self.TYP = 'client'
@@ -346,8 +347,8 @@ class Session:
     def send(self, chunk):
         try:
             if isinstance(chunk, Node):
-                chunk = unicode(chunk).encode('utf-8')
-            elif type(chunk) == type(u''):
+                chunk = str(chunk).encode('utf-8')
+            elif type(chunk) == type(''):
                 chunk = chunk.encode('utf-8')
             #self.enqueue(chunk)
         except:
@@ -394,7 +395,7 @@ class Session:
             try:
                 # LOCK_QUEUE
                 sent = self._send(str(self.sendbuffer))
-            except Exception, err:
+            except Exception as err:
                 #self.DEBUG('server','Attempting to kill %i!!!\n%s'%(self._sock.fileno(),err),'warn')
                 self.DEBUG('Attempting to kill %i!!!\n%s' % (self._sock.fileno(), err), 'warn')
                 # UNLOCK_QUEUE
@@ -424,7 +425,7 @@ class Session:
             try:
                 # LOCK_QUEUE
                 sent = self._send(str(self.sendbuffer))
-            except Exception, err:
+            except Exception as err:
                 self.DEBUG('server', 'Attempting to kill %i!!!\n%s' % (self._sock.fileno(), err), 'warn')
                 # UNLOCK_QUEUE
                 self.set_socket_state(SOCKET_DEAD)
@@ -449,10 +450,10 @@ class Session:
         return self._sock.fileno()
 
     def _catch_stream_id(self, ns=None, tag='stream', attrs={}):
-        if 'id' not in attrs.keys() or not attrs['id']:
+        if 'id' not in list(attrs.keys()) or not attrs['id']:
             return self.terminate_stream(STREAM_INVALID_XML)
         self.ID = attrs['id']
-        if 'version' not in attrs.keys():
+        if 'version' not in list(attrs.keys()):
             self._owner.Dialback(self)
 
     def _stream_open(self, ns=None, tag='stream', attrs={}):
@@ -461,11 +462,11 @@ class Session:
             text += ' to="%s"' % self.peer
         else:
             text += ' id="%s"' % self.ID
-            if 'to' not in attrs.keys():
+            if 'to' not in list(attrs.keys()):
                 text += ' from="%s"' % self._owner.servernames[0]
             else:
                 text += ' from="%s"' % attrs['to']
-        if 'xml:lang' in attrs.keys():
+        if 'xml:lang' in list(attrs.keys()):
             text += ' xml:lang="%s"' % attrs['xml:lang']
         #if self.xmlns: xmlns=self.xmlns
         if self.Stream.xmlns in [NS_CLIENT, NS_COMPONENT_ACCEPT]:
@@ -473,7 +474,7 @@ class Session:
         else:
             xmlns = NS_SERVER
         text += ' xmlns:db="%s" xmlns:stream="%s" xmlns="%s"' % (NS_DIALBACK, NS_STREAMS, xmlns)
-        if 'version' in attrs.keys() or self.TYP == 'client':
+        if 'version' in list(attrs.keys()) or self.TYP == 'client':
             text += ' version="1.0"'
         self.send(text + '>')
         self.set_stream_state(STREAM__OPENED)
@@ -485,12 +486,12 @@ class Session:
             return self.terminate_stream(STREAM_INVALID_NAMESPACE)
         if self.Stream.xmlns != self.xmlns:
             return self.terminate_stream(STREAM_BAD_NAMESPACE_PREFIX)
-        if 'to' not in attrs.keys():
+        if 'to' not in list(attrs.keys()):
             return self.terminate_stream(STREAM_IMPROPER_ADDRESSING)
         if attrs['to'] not in self._owner.servernames:
             return self.terminate_stream(STREAM_HOST_UNKNOWN)
         self.ourname = attrs['to'].lower()
-        if self.TYP == 'server' and 'version' in attrs.keys():
+        if self.TYP == 'server' and 'version' in list(attrs.keys()):
             self.send_features()
 
     def send_features(self):
@@ -680,7 +681,7 @@ class Socker_client:
     def get_hostname(self):
         if self.conn_okay is True:
             res = self._proxy.hostname({})
-            if 'hostname' in res.keys():
+            if 'hostname' in list(res.keys()):
                 self._hostname = res['hostname']
                 return res['hostname']
             else:
@@ -901,11 +902,11 @@ class multisession_manager:
             self.threads[i] = t
 
     def destroy(self):
-        for t in self.threads.values():
+        for t in list(self.threads.values()):
             t.stop()
 
     def select_thread(self):
-        return random.choice(self.threads.values())
+        return random.choice(list(self.threads.values()))
 
     def registersession(self, s):
         self.select_thread().registersession(s)
@@ -924,7 +925,7 @@ class multisession_manager:
 
             self.sockpoll = select.poll()
             self.sockets = {}
-            self.SESS_LOCK = thread.allocate_lock()
+            self.SESS_LOCK = _thread.allocate_lock()
 
             self._owner = owner
             self.index = index
@@ -1058,7 +1059,7 @@ class Server:
                 self.DEBUG('server', "Could not Load PsyCo!", 'error')
 
         if cmd_options.setdefault('socker_info', False):
-            import xmlrpclib
+            import xmlrpc.client
 
         if not cmd_options.setdefault('password', None):
             globals()['RPC_PASSWORD'] = hashlib.sha1(str(time.time()) + globals()['SOCKER_TGUID'] + hashlib.sha1(str(time.time())).hexdigest()).hexdigest()
@@ -1073,7 +1074,7 @@ class Server:
         self.multisession_manager = multisession_manager(self)
 
         self._component = 0
-        self.SESS_LOCK = thread.allocate_lock()
+        self.SESS_LOCK = _thread.allocate_lock()
         self.Dispatcher = dispatcher.Dispatcher()
         self.Dispatcher._owner = self
         self.Dispatcher._init()
@@ -1088,13 +1089,13 @@ class Server:
         self.routes = {}
         self.sisters = {}
 
-        import modules
+        from . import modules
         if under_restart is True:
-            reload(modules)
+            imp.reload(modules)
         for addon in modules.addons:
             #if issubclass(addon,PlugIn):
             try:
-                if addon().__class__.__name__ in self.__dict__.keys() and under_restart is True:
+                if addon().__class__.__name__ in list(self.__dict__.keys()) and under_restart is True:
                     #self.DEBUG('server','Plugging-out?','info')
 
                     self.DEBUG('server', 'Plugging %s out of %s.' % (addon(), self), 'stop')
@@ -1107,7 +1108,7 @@ class Server:
                         for method in addon()._old_owners_methods:
                             self.__dict__[method.__name__] = method
                     del self.__dict__[addon().__class__.__name__]
-                    if 'plugout' in addon().__class__.__dict__.keys():
+                    if 'plugout' in list(addon().__class__.__dict__.keys()):
                         return addon().plugout()
 
                     addon().PlugIn(self)
@@ -1136,7 +1137,7 @@ class Server:
                     port_map[str(x[0])] = x[1]
                 globals()['PORT_%s' % x[2]] = x[1]
 
-            for port, new_port in port_map.iteritems():
+            for port, new_port in list(port_map.items()):
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 sock.bind(('', new_port))
@@ -1223,7 +1224,7 @@ class Server:
 
         data['uptime'] = self.tool_readableTimeDurration(time.time() - self.up_since)
         data['raw_uptime'] = time.time() - self.up_since
-        data['no_routes'] = len(self.routes.keys())
+        data['no_routes'] = len(list(self.routes.keys()))
         data['no_reg_users_conn'] = len(self.Router._data)
         data['no_conn_servers'] = self.num_servers
         data['no_msg_routed'] = self.num_messages
@@ -1285,7 +1286,7 @@ class Server:
             return
         if getattr(self, 'sockpoll', None) is not None:
             self.sockpoll.unregister(s)
-        elif s.fileno() in self.leventobjs.keys() and self.leventobjs[s.fileno()] is not None:
+        elif s.fileno() in list(self.leventobjs.keys()) and self.leventobjs[s.fileno()] is not None:
             self.leventobjs[s.fileno()].delete()  # Kill libevent event
             del self.leventobjs[s.fileno()]
 
@@ -1304,8 +1305,8 @@ class Server:
             elif alt_s:
                 self.deactivatesession(peer)
             self.routes[peer] = s
-        except Exception, e:
-            print "###########ERRORRRRRRRRR  " + str(e)
+        except Exception as e:
+            print(("###########ERRORRRRRRRRR  " + str(e)))
         #print "### ACTIVATED SESSION %s WITH PEER %s"%(str(s),str(peer))
 
     def getsession(self, jid):
@@ -1316,22 +1317,22 @@ class Server:
 
     def deactivatesession(self, peer):
         s = self.getsession(peer)
-        if peer in self.routes.keys():
+        if peer in list(self.routes.keys()):
             del self.routes[peer]
-        if peer in self.sisters.keys():
+        if peer in list(self.sisters.keys()):
             del self.sisters[peer]
         #print "### TRYING TO DE-ACTIVATE SESSION OF PEER %s : %s"%(str(peer),str(s))
         return s
 
     def run(self):
         global GLOBAL_TERMINATE
-        if 'event' in globals().keys():
+        if 'event' in list(globals().keys()):
             event.signal(2, self._lib_out).add()
         if self.cmd_options['select_enabled'] is True:
             while GLOBAL_TERMINATE is False:
                 self.select_handle()
 
-        elif 'event' in globals().keys():
+        elif 'event' in list(globals().keys()):
             event.dispatch()
 
     def libevent_read_callback(self, ev, fd, evtype, pipe):
@@ -1343,7 +1344,7 @@ class Server:
         try:
             for fileno, ev in self.sockpoll.poll(1000):
                 self._socket_handler(self.sockets[fileno], 'select')
-        except Exception, e:
+        except Exception as e:
             self.DEBUG('server', str(e), 'err')
 
     def _socket_handler(self, sock, mode):
@@ -1412,7 +1413,7 @@ class Server:
     def shutdown(self, reason):
         global GLOBAL_TERMINATE
         GLOBAL_TERMINATE = True
-        socklist = self.sockets.keys()
+        socklist = list(self.sockets.keys())
         for fileno in socklist:
             s = self.sockets[fileno]
             if isinstance(s, socket.socket):
@@ -1444,15 +1445,15 @@ class Server:
         return s
 
     def _connect_session(self, session, domain, port):
-        print session.DEBUG(self._l(SERVER_S2S_ATTEMPT_CONNECTION) % {'server': domain}, 'info')
+        print((session.DEBUG(self._l(SERVER_S2S_ATTEMPT_CONNECTION) % {'server': domain}, 'info')))
         if port is None:
             port = 5269
         else:
-            print "s2s port set", port
+            print(("s2s port set", port))
         try:
             session._sock.connect((domain, port))
-        except socket.error, err:
-            print session.DEBUG(self._l(SERVER_S2S_THREAD_ERROR) % err, 'error')
+        except socket.error as err:
+            print((session.DEBUG(self._l(SERVER_S2S_THREAD_ERROR) % err, 'error')))
             self.num_servers -= 1
             session.set_session_state(SESSION_BOUND)
             session.set_socket_state(SOCKET_DEAD)
@@ -1471,7 +1472,7 @@ class Server:
 
     def Privacy(self, peer, stanza):
         self.DEBUG('server', self._l(SERVER_PVCY_ACTIVATED), 'warn')
-        template_input = {'jid_from': unicode(peer.peer).encode('utf-8'), 'jid_to': unicode(stanza['to']).encode('utf-8')}
+        template_input = {'jid_from': str(peer.peer).encode('utf-8'), 'jid_to': str(stanza['to']).encode('utf-8')}
         split_jid = self.tool_split_jid(peer.peer)
         if split_jid is None:
             return
@@ -1485,7 +1486,7 @@ class Server:
         if not to_node:
             return  # Yep, not for us.
         to_domain = to.getDomain()
-        if to_domain in self.components.keys():
+        if to_domain in list(self.components.keys()):
             component = True
         else:
             component = False
@@ -1517,7 +1518,7 @@ class Server:
                 return
 
             if to_roster is not None:
-                for x, y in to_roster.iteritems():
+                for x, y in list(to_roster.items()):
                     if x == node + '@' + domain:
                         to_working_roster_item = y
                         break
@@ -1530,9 +1531,9 @@ class Server:
                 to_working_roster_item = {}
                 to_working_roster_item['subscription'] = 'none'
 
-            for z, a in roster.iteritems():
+            for z, a in list(roster.items()):
                 if z == bareto:
-                    if a['subscription'] == 'both' and 'subscription' in to_working_roster_item.keys() and to_working_roster_item['subscription'] == 'both':
+                    if a['subscription'] == 'both' and 'subscription' in list(to_working_roster_item.keys()) and to_working_roster_item['subscription'] == 'both':
                         self.DEBUG('server', self._l(SERVER_PVCY_ACCESS_CLEAR_BIDIRECTIONAL) % template_input, 'info')
                         return
                     elif to_working_roster_item['subscription'] == 'from':
@@ -1565,8 +1566,8 @@ def start_new_thread_fake(func, args):
 
 
 def testrun():
-    thread.start_new_thread = start_new_thread_fake
-    import modules
+    _thread.start_new_thread = start_new_thread_fake
+    from . import modules
     modules.stream.thread.start_new_thread = start_new_thread_fake
     return Server()
 
@@ -1581,7 +1582,7 @@ class get_input(threading.Thread):
     def run(self):
         global GLOBAL_TERMINATE
         while GLOBAL_TERMINATE is False:
-            the_input = raw_input("")
+            the_input = eval(input(""))
             if the_input == 'restart':
                 self._owner.DEBUG('server', 'Stand-by; Restarting entire server!', 'info')
                 self._owner.shutdown(STREAM_SYSTEM_SHUTDOWN)
@@ -1590,16 +1591,16 @@ class get_input(threading.Thread):
                 self._owner.__init__(['always'], True)
 
             elif the_input == 'sys_debug':
-                print sys.exc_info()
-                print traceback.print_exc()
+                print((sys.exc_info()))
+                print((traceback.print_exc()))
             elif the_input.split(' ')[0] == 'restart':
 
-                import modules
-                reload(modules)
+                from . import modules
+                imp.reload(modules)
                 for addon in modules.addons:
                     if addon().__class__.__name__.lower() == the_input.split(' ')[1].lower():
                         if issubclass(addon, PlugIn):
-                            if addon().__class__.__name__ in self._owner.__dict__.keys():
+                            if addon().__class__.__name__ in list(self._owner.__dict__.keys()):
                             #self.DEBUG('server','Plugging-out?','info')
 
                                 self._owner.DEBUG('server', 'Plugging %s out of %s.' % (addon(), s), 'stop')
@@ -1612,7 +1613,7 @@ class get_input(threading.Thread):
                                     for method in addon()._old_owners_methods:
                                         self._owner.__dict__[method.__name__] = method
                                 del self._owner.__dict__[addon().__class__.__name__]
-                                if 'plugout' in addon().__class__.__dict__.keys():
+                                if 'plugout' in list(addon().__class__.__dict__.keys()):
                                     addon().plugout()
                                 self._owner.unfeature(addon.NS)
 
@@ -1625,8 +1626,8 @@ class get_input(threading.Thread):
 
             elif the_input.split(' ')[0] == 'start':
 
-                import modules
-                reload(modules)
+                from . import modules
+                imp.reload(modules)
                 for addon in modules.addons:
                     if addon().__class__.__name__.lower() == the_input.split(' ')[1].lower():
                         if issubclass(addon, PlugIn):
@@ -1637,12 +1638,12 @@ class get_input(threading.Thread):
 
             elif the_input.split(' ')[0] == 'stop':
 
-                import modules
-                reload(modules)
+                from . import modules
+                imp.reload(modules)
                 for addon in modules.addons:
                     if addon().__class__.__name__.lower() == the_input.split(' ')[1].lower():
                         if issubclass(addon, PlugIn):
-                            if addon().__class__.__name__ in self._owner.__dict__.keys():
+                            if addon().__class__.__name__ in list(self._owner.__dict__.keys()):
                                 #self.DEBUG('server','Plugging-out?','info')
 
                                 self._owner.DEBUG('server', 'Plugging %s out of %s.' % (addon(), s), 'stop')
@@ -1655,7 +1656,7 @@ class get_input(threading.Thread):
                                     for method in addon()._old_owners_methods:
                                         self._owner.__dict__[method.__name__] = method
                                 del self._owner.__dict__[addon().__class__.__name__]
-                                if 'plugout' in addon().__class__.__dict__.keys():
+                                if 'plugout' in list(addon().__class__.__dict__.keys()):
                                     addon().plugout()
                             else:
                                 self._owner.DEBUG('server', 'Error: Could not un-plug %s' % addon().__class__.__name__, 'error')
@@ -1667,9 +1668,9 @@ class get_input(threading.Thread):
                                 for method in addon()._old_owners_methods:
                                     self._owner.__dict__[method.__name__] = method
                             del self._owner.__dict__[addon().__class__.__name__]
-                            if 'plugout' in addon().__class__.__dict__.keys():
+                            if 'plugout' in list(addon().__class__.__dict__.keys()):
                                 addon().plugout()
-                        if addon().__class__.__name__ in self._owner.__dict__.keys():
+                        if addon().__class__.__name__ in list(self._owner.__dict__.keys()):
                             self._owner.DEBUG('server', 'Error: Could not un-plug %s' % addon().__class__.__name__, 'error')
                         self._owner.unfeature(addon.NS)
 
@@ -1728,7 +1729,7 @@ if __name__ == '__main__':
 
     if cmd_options.enable_interactive is True:
         inpt_service.start()
-    print "Starting server . . ."
+    print("Starting server . . .")
 
     while GLOBAL_TERMINATE is False:
         try:
@@ -1739,7 +1740,7 @@ if __name__ == '__main__':
             s.DEBUG('server', s._l(SERVER_SHUTDOWN_MSG), 'info')
             s.shutdown(STREAM_SYSTEM_SHUTDOWN)
         except:
-            if 'event' in globals().keys():
+            if 'event' in list(globals().keys()):
                 event.abort()
             s.DEBUG("server", 'Check your traceback file, please!', 'warn')
             tbfd = file('xmppd.traceback', 'a')

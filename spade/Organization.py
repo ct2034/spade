@@ -3,10 +3,10 @@ import random
 import string
 
 from xmpp import *
-from Queue import *
-import Unit
-import DF
-import Behaviour
+from queue import *
+from . import Unit
+from . import DF
+from . import Behaviour
 
 
 class CreationError(Exception):
@@ -252,7 +252,7 @@ class Organization(Unit.Unit):
             msg = self._receive(True, 10)
             if msg:
                 if msg.getAttr("type") == "error":
-                    print "Room creation is restricted"
+                    print("Room creation is restricted")
                     self.result = False
                     return
             else:
@@ -272,7 +272,7 @@ class Organization(Unit.Unit):
 
             #setting room configuration
             if not msg or msg.getAttr("type") == "error":
-                print "No configuration is possible: "
+                print("No configuration is possible: ")
                 self.result = False
                 return
             #falta por revisar!!!!
@@ -283,7 +283,7 @@ class Organization(Unit.Unit):
             if resquery:
                 items = resquery.getTags("field")
             if resquery is None:
-                print "No configuration is possible"
+                print("No configuration is possible")
                 self.result = False
             for item in items:
                 value = None
@@ -365,7 +365,7 @@ class Organization(Unit.Unit):
             msg = self._receive(True, 10)
             if msg:
                 if msg.getAttr("type") == "error":
-                    print "Room creation is restricted"
+                    print("Room creation is restricted")
                     self.result = False
                     return
             else:
@@ -385,7 +385,7 @@ class Organization(Unit.Unit):
 
             #setting room configuration
             if not msg or msg.getAttr("type") == "error":
-                print "No configuration is possible: "
+                print("No configuration is possible: ")
                 self.result = False
                 return
             #falta por revisar!!!!
@@ -396,7 +396,7 @@ class Organization(Unit.Unit):
             if resquery:
                 items = resquery.getTags("field")
             if resquery is None:
-                print "No configuration is possible"
+                print("No configuration is possible")
                 self.result = False
             for item in items:
                 value = None
@@ -558,11 +558,11 @@ class Organization(Unit.Unit):
             if msg:
                 if msg.getAttr("type") != "result":
                     error = msg.getError()
-                    print error
+                    print(error)
                     return
                 else:
                     if msg.getTag("register") is not None:
-                        print "The agent has yet registered in the Unit " + self.unitName
+                        print("The agent has yet registered in the Unit " + self.unitName)
                     else:
                         self.result = msg.getChildren()[0]
 #cambiar
@@ -607,11 +607,11 @@ class Organization(Unit.Unit):
                 if msg.getAttr("type") != "result":
                     error = msg.getTag("error")
                     if error.getAttr("code") == "409":
-                        print "Error: Conflict, this nickname is already reserved"
+                        print("Error: Conflict, this nickname is already reserved")
                     if error.getAttr("code") == "503":
-                        print "Error: Resgistration Not Supported"
+                        print("Error: Resgistration Not Supported")
                     if error.getAttr("code") == "400":
-                        print "Error: Bad Request"
+                        print("Error: Bad Request")
 
     def getUnitList(self):
         """
@@ -783,7 +783,7 @@ class Organization(Unit.Unit):
             if msg:
                 if msg.getAttr("type") != "result":
             #print "Error: This agent is not a owner of the organization"
-                    print msg.getError()
+                    print(msg.getError())
                     return
                 else:
                     self.result = True

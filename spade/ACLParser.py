@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from pyparsing import *
+from .pyparsing import *
 import sys
-import ACLMessage
-import AID
-from BasicFipaDateTime import *
+from . import ACLMessage
+from . import AID
+from .BasicFipaDateTime import *
 
 import xml.sax
 from xml.sax import handler
@@ -202,8 +202,8 @@ class ACLParser:
         try:
             self.bnf.validate()
 
-        except Exception, err:
-            print err
+        except Exception as err:
+            print(err)
             sys.exit(-1)
 
         #bnf.setDebug()
@@ -238,14 +238,14 @@ class ACLParser:
 
         try:
             m = self.bnf.parseString(string)
-        except ParseException, err:
-            print err.line
-            print " " * (err.column - 1) + "^"
-            print err
+        except ParseException as err:
+            print(err.line)
+            print(" " * (err.column - 1) + "^")
+            print(err)
             sys.exit(-1)
-        except Exception, err:
-            print "Unkwonw Exception"
-            print err
+        except Exception as err:
+            print("Unkwonw Exception")
+            print(err)
             sys.exit(-1)
 
         return self.buildACL(m)
@@ -258,14 +258,14 @@ class ACLParser:
 
         try:
             m = self.bnf.parseFile(file)
-        except ParseException, err:
-            print err.line
-            print " " * (err.column - 1) + "^"
-            print err
+        except ParseException as err:
+            print(err.line)
+            print(" " * (err.column - 1) + "^")
+            print(err)
             sys.exit(-1)
-        except Exception, err:
-            print "Unkwonw Exception"
-            print err
+        except Exception as err:
+            print("Unkwonw Exception")
+            print(err)
             sys.exit(-1)
 
         return self.buildACL(m)
@@ -577,8 +577,8 @@ if __name__ == "__main__":
 
     p = ACLxmlParser()
     m = p.parseFile("m.xml")
-    print m
-    print p.encodeXML(m)
+    print(m)
+    print(p.encodeXML(m))
 
 
 

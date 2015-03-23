@@ -7,7 +7,7 @@ def co2xml(map):
     """ Convenience recursive function for transforming ContentObjects into XML.
         The transformation is {x:y} --> <x>y</x> """
     xml = ""
-    for key, value in map.items():
+    for key, value in list(map.items()):
         if "ContentObject" in str(type(value)):
             xml += "<%s>%s</%s>" % (key, co2xml(value), key)
         elif "list" in str(type(value)):
@@ -49,9 +49,9 @@ class ContentObject(dict):
         without worry.
         """
         #print "KEY: ", key, "VALUE: ", value
-        if '_ContentObject__initialised' not in self.__dict__.keys():
+        if '_ContentObject__initialised' not in list(self.__dict__.keys()):
             return dict.__setattr__(self, key, value)
-        elif key in self.__dict__.keys():
+        elif key in list(self.__dict__.keys()):
             dict.__setattr__(self, key, value)
         else:
             #self.__setitem__(key, value)
@@ -71,13 +71,13 @@ class ContentObject(dict):
     def __getattr__(self, name):
         #print "GETATTR:", name
         try:
-            if name in self.keys():
+            if name in list(self.keys()):
                 return self[name]
         except:
             pass
-        for ns in self.namespaces.values():
+        for ns in list(self.namespaces.values()):
             try:
-                if ns + name in self.keys():
+                if ns + name in list(self.keys()):
                     return self[ns + name]
             except:
                 pass
@@ -94,7 +94,7 @@ class ContentObject(dict):
 
     def pprint(self, ind=0):
         s = ""
-        for k, v in self.items():
+        for k, v in list(self.items()):
                 try:
                         s = s + ('\t' * ind) + str(k) + ":\n" + v.pprint(ind + 1) + '\n'
                 except:
@@ -105,7 +105,7 @@ class ContentObject(dict):
         # Build rdf:RDF node
         root = simplexml.Node("rdf:RDF", {"xmlns:rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"})
         nss = {}
-        for k, v in self.namespaces.items():
+        for k, v in list(self.namespaces.items()):
             if v in ["xml:", "rdf:"]:
                 pass
             elif v is not None and v != "None":
@@ -173,7 +173,7 @@ def Node2CO(node, nsdict):
         # Blank node
         is_list = False
         # Is it a list?
-        if "list" in node.attrs.keys():
+        if "list" in list(node.attrs.keys()):
             # It IS a marked list
             is_list = True
         else:
@@ -190,7 +190,7 @@ def Node2CO(node, nsdict):
             s = ContentObject()
             for c in node.kids:
                 #print "KID ",c.name," NS ",c.namespace
-                if c.namespace in nsdict.keys():
+                if c.namespace in list(nsdict.keys()):
                     key = nsdict[c.namespace] + c.name
                 else:
                     key = c.name
@@ -208,7 +208,7 @@ def RDFXML2CO(rdfdata):
 
 
 if __name__ == "__main__":
-    import urllib2
+    import urllib.request, urllib.error, urllib.parse
     #f = urllib2.urlopen("http://infomesh.net/2003/rdfparser/meta.rdf")
     #f = urllib2.urlopen("http://tourism.gti-ia.dsic.upv.es/rdf/ComidasTascaRapida.rdf")
 
@@ -244,14 +244,14 @@ if __name__ == "__main__":
     sco.uno["spade:tres"] = "OTRA"
 
     #print str(sco)
-    print "ORIGINAL:"
-    print sco.pprint()
+    print("ORIGINAL:")
+    print(sco.pprint())
     #print sco["rdf:Description"]["dc:creator"]["foaf:name"], str(type(sco["rdf:Description"]["dc:creator"]["foaf:name"]))
     #print sco["rdf:Description"]["dc:creator"]["foaf:homePage"]
-    print sco.asRDFXML()
+    print(sco.asRDFXML())
     sco2 = RDFXML2CO(sco.asRDFXML())
-    print "SEGUNDO:"
-    print sco2.pprint()
-    print sco2.asRDFXML()
+    print("SEGUNDO:")
+    print(sco2.pprint())
+    print(sco2.asRDFXML())
 
     #print sco2.asSL0()

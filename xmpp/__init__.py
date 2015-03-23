@@ -26,6 +26,7 @@ and use only methods for access all values you should not have any problems.
 
 """
 
-import simplexml,protocol,debug,auth,transports,roster,dispatcher,features,browser,filetransfer,commands
-from client import *
-from protocol import *
+from . import simplexml,protocol,debug,auth,transports,roster,dispatcher,features,browser,filetransfer,commands
+#from . import simplexml,protocol,dispatcher,features,browser,filetransfer,commands,auth,debug,transports,roster
+from .client import *
+from .protocol import *
