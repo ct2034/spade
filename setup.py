@@ -56,6 +56,7 @@ setup(name='SPADE',
     "pexpect",
     "SPARQLWrapper",
     "unittest-xml-reporting",
+    "debug",
     ],
     )
     
